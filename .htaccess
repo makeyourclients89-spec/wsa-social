@@ -1,0 +1,34 @@
+# ----------------------------------------------------------------------
+# WSA Multi-Channel Publisher - Hardened Apache Configuration
+# ----------------------------------------------------------------------
+
+# 1. Disable Directory Browsing and Server Signatures
+Options -Indexes -MultiViews
+ServerSignature Off
+
+# 2. Block direct access to sensitive file types (.sqlite, .db, .ini, .log, .txt, .md, .json, .bak)
+<FilesMatch "\.(sqlite|sqlite3|db|ini|log|txt|md|json|lock|bak|conf)$">
+    Require all denied
+</FilesMatch>
+
+# 3. Block access to hidden dot-files (.git, .env, .htaccess, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# 4. Enforce Enterprise Security Headers
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+    Header setifempty X-Frame-Options "DENY"
+    Header setifempty X-Content-Type-Options "nosniff"
+    Header setifempty Referrer-Policy "strict-origin-when-cross-origin"
+    Header setifempty Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com https://*.facebook.com https://www.linkedin.com https://*.linkedin.com https://www.pinterest.com https://*.pinterest.com;"
+    Header setifempty Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header setifempty Strict-Transport-Security "max-age=31536000; includeSubDomains" "expr=%{HTTPS} == 'on'"
+</IfModule>
+
+# 5. Guard Storage Directory and URL Rewrite
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^storage(/.*)?$ - [F,L,NC]
+</IfModule>

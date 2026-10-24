@@ -1,0 +1,7 @@
+# Protect uploads folder: disable script execution to prevent RCE
+<FilesMatch "(?i)\.(php|phtml|php3|php4|php5|php7|phps|phar|exe|pl|py|cgi|sh|bat)$">
+    Require all denied
+</FilesMatch>
+Options -ExecCGI -Indexes
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .phar
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .phps .phar
