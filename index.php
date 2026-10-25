@@ -371,6 +371,47 @@ if ($page === 'api-group-queue-status') {
     exit;
 }
 
+if ($page === 'download-extension-zip') {
+    if (!class_exists('ZipArchive')) {
+        flash('error', 'PHP ZipArchive extension is not available on this server.');
+        redirect('index.php?page=groups');
+    }
+
+    $zipFile = sys_get_temp_dir() . '/wsa-social-extension-' . time() . '.zip';
+    $zip = new ZipArchive();
+    if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+        $extDir = realpath(ROOT_DIR . '/extension');
+        if ($extDir && is_dir($extDir)) {
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($extDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            foreach ($files as $file) {
+                if (!$file->isDir()) {
+                    $filePath = $file->getRealPath();
+                    $relativePath = substr($filePath, strlen($extDir) + 1);
+                    $zip->addFile($filePath, $relativePath);
+                }
+            }
+        }
+        $zip->close();
+
+        if (file_exists($zipFile) && filesize($zipFile) > 0) {
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="wsa-social-extension.zip"');
+            header('Content-Length: ' . filesize($zipFile));
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            readfile($zipFile);
+            @unlink($zipFile);
+            exit;
+        }
+    }
+
+    flash('error', 'Could not create extension ZIP file.');
+    redirect('index.php?page=groups');
+}
+
 // ----------------------------------------------------------------------
 // Public Legal & Compliance Routes (Meta, LinkedIn, Pinterest App Review)
 // Accessible without login so OAuth reviewers, automated crawlers, and users can view

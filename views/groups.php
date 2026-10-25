@@ -117,7 +117,11 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
       </div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:8px;">
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <button type="button" id="header-ext-status-btn" class="btn light" onclick="openExtensionSetupModal(true)" style="font-size:12px; padding:6px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+      <span id="header-ext-status-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span>
+      <span id="header-ext-status-text">Checking Extension...</span>
+    </button>
     <button type="button" class="btn light" onclick="document.getElementById('modal-change-default-page').showModal()" style="font-size:12px; padding:6px 12px; border-radius:6px;">
       🔄 Change Default Page
     </button>
@@ -1541,63 +1545,197 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   </div>
 </dialog>
 
-<!-- MODAL 8: CHROME EXTENSION SETUP GUIDE -->
-<dialog id="modal-extension-setup" style="border:1px solid var(--line); border-radius:14px; padding:24px; max-width:620px; width:92%; background:var(--bg); color:var(--ink); box-shadow:0 20px 45px rgba(0,0,0,0.3);">
+<!-- MODAL 8: CHROME EXTENSION SETUP & AUTO-DETECTION GUIDE -->
+<dialog id="modal-extension-setup" style="border:1px solid var(--line); border-radius:14px; padding:24px; max-width:640px; width:92%; background:var(--bg); color:var(--ink); box-shadow:0 20px 45px rgba(0,0,0,0.3);">
   <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px;">
     <div>
       <h3 style="margin:0; font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px;">
         <span style="color:#2563eb;">🚀</span>
-        <span>WSA Chrome Extension Setup (Zero-Click Auto Share)</span>
+        <span>WSA Chrome Extension (Zero-Click Auto Share)</span>
       </h3>
       <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">
-        Aapko koi bhi button dabane ki zaroorat nahi padegi — extension sabkuch autonomously share karega!
+        Facebook groups me bina kisi manual click ke automatically background me posting karne ke liye.
       </p>
     </div>
     <button type="button" class="smallbtn" onclick="document.getElementById('modal-extension-setup').close()" style="background:transparent; border:none; font-size:18px; cursor:pointer;">✕</button>
   </div>
 
-  <div style="background:#f1f5f9; border:1.5px dashed #94a3b8; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
-    <div style="font-size:11px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Extension Folder Location (Path):</div>
-    <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
-      <input type="text" id="ext-folder-path" readonly value="c:\xampp\htdocs\wsa-social\extension" style="flex:1; font-family:monospace; font-size:13px; font-weight:700; background:#fff; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; color:#0f172a;">
-      <button type="button" id="btn-copy-ext-path" onclick="copyExtensionFolder(this)" class="btn" style="background:#2563eb; color:#fff; font-weight:700; font-size:12px; padding:8px 16px; border-radius:6px; white-space:nowrap;">
-        📋 Copy Path
-      </button>
+  <!-- Real-time Live Status Banner -->
+  <div id="modal-ext-status-banner" style="display:flex; align-items:center; justify-content:space-between; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span id="modal-ext-status-icon" style="font-size:20px;">⚠️</span>
+      <div>
+        <div id="modal-ext-status-title" style="font-size:13px; font-weight:800; color:#c2410c;">Extension Abhi Browser Me Active Nahi Hai</div>
+        <div id="modal-ext-status-sub" style="font-size:11.5px; color:#9a3412;">Zero-Click background sharing ke liye niche diye 1-click steps follow karein.</div>
+      </div>
     </div>
+    <button type="button" class="btn light" onclick="verifyExtensionConnection(true)" style="font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:6px; white-space:nowrap;">
+      🔄 Check Again
+    </button>
   </div>
 
+  <!-- 1-Click Download or Local Path Box -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:16px;">
+    <a href="index.php?page=download-extension-zip" class="btn" style="background:#2563eb; color:#fff; font-weight:700; font-size:12.5px; padding:10px 14px; border-radius:8px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
+      <span>📦 Download Extension (.zip)</span>
+    </a>
+    <button type="button" id="btn-copy-ext-path" onclick="copyExtensionFolder(this)" class="btn light" style="font-weight:700; font-size:12px; padding:10px 14px; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px;">
+      <span>📋 Copy Extension Folder Path</span>
+    </button>
+  </div>
+  <input type="hidden" id="ext-folder-path" value="<?= h(realpath(ROOT_DIR . '/extension') ?: (ROOT_DIR . '/extension')) ?>">
+
   <div style="font-weight:800; font-size:13px; margin-bottom:10px; color:var(--ink);">
-    Chrome me Load Karne Ke 4 Aasan Steps (1 Minute):
+    Chrome me Enable Karne Ke 3 Simple Steps (Sirf 1 Baar):
   </div>
 
   <ol style="padding-left:20px; line-height:1.7; font-size:13px; color:var(--ink); margin-bottom:18px;">
-    <li>Chrome browser me naya tab kholein aur address bar me dalein: <code style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700; color:#1e293b;">chrome://extensions</code></li>
+    <li>Naye Chrome tab me open karein: <code style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="navigator.clipboard?.writeText('chrome://extensions')">chrome://extensions</code> <span style="font-size:11px; color:var(--muted);">(Address bar me paste karein)</span></li>
     <li>Top right corner me <b>"Developer mode"</b> toggle switch ko <b>ON</b> karein.</li>
-    <li>Top left corner me <b>"Load unpacked"</b> button par click karein.</li>
-    <li>Upar diya gaya folder select karein: <code style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700; color:#1e293b;">c:\xampp\htdocs\wsa-social\extension</code>.</li>
+    <li>Top left corner me <b>"Load unpacked"</b> click karein aur downloaded/unzipped <code>extension</code> folder select karein!</li>
   </ol>
 
-  <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:12px; margin-bottom:18px; font-size:12.5px; color:#065f46; line-height:1.5;">
-    <b>🎉 Bas ho gaya!</b> Extension load hote hi background me active ho jayega. Har 2-minute ke interval pe queue se task uthayega, Facebook group kholega, "Post" button <b>automatically dabayega</b>, aur status report me update kar dega!
+  <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px; margin-bottom:18px; font-size:12px; color:#166534; display:flex; align-items:center; gap:8px;">
+    <span>⚡</span>
+    <div><b>Load hote hi kya hoga?</b> Extension queue se due items ko bina button dabaye Facebook groups me post karegi aur status Live record karegi!</div>
   </div>
 
-  <div style="display:flex; justify-content:flex-end; gap:8px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:12px;">
+    <label style="font-size:12px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" id="chk-dont-show-again-today" onchange="toggleDismissExtensionModalToday(this.checked)">
+      <span>Aaj ke liye auto-popup mat dikhana</span>
+    </label>
     <button type="button" class="btn light" onclick="document.getElementById('modal-extension-setup').close()">Close</button>
   </div>
 </dialog>
 
 <script>
+// WSA Extension Realtime Detection Engine
+let isWsaExtensionActive = false;
+
+function updateExtensionStatusUI(isActive, version) {
+  isWsaExtensionActive = !!isActive;
+  const dot = document.getElementById('header-ext-status-dot');
+  const txt = document.getElementById('header-ext-status-text');
+  const banner = document.getElementById('modal-ext-status-banner');
+  const icon = document.getElementById('modal-ext-status-icon');
+  const title = document.getElementById('modal-ext-status-title');
+  const sub = document.getElementById('modal-ext-status-sub');
+
+  if (isActive) {
+    if (dot) dot.style.background = '#10b981';
+    if (txt) txt.innerText = '🟢 WSA Extension Active ' + (version ? 'v' + version : '');
+    if (banner) {
+      banner.style.background = '#f0fdf4';
+      banner.style.borderColor = '#bbf7d0';
+    }
+    if (icon) icon.innerText = '✅';
+    if (title) {
+      title.innerText = 'WSA Chrome Extension Connected & Active!';
+      title.style.color = '#15803d';
+    }
+    if (sub) {
+      sub.innerText = 'Zero-Click Background Auto-Posting is ready and running.';
+      sub.style.color = '#166534';
+    }
+  } else {
+    if (dot) dot.style.background = '#ef4444';
+    if (txt) txt.innerText = '🔴 Extension Not Detected';
+    if (banner) {
+      banner.style.background = '#fff7ed';
+      banner.style.borderColor = '#fed7aa';
+    }
+    if (icon) icon.innerText = '⚠️';
+    if (title) {
+      title.innerText = 'Extension Abhi Browser Me Active Nahi Hai';
+      title.style.color = '#c2410c';
+    }
+    if (sub) {
+      sub.innerText = 'Zero-Click background sharing ke liye niche diye 1-click steps follow karein.';
+      sub.style.color = '#9a3412';
+    }
+  }
+}
+
+function verifyExtensionConnection(forceModal) {
+  if (document.documentElement.getAttribute('data-wsa-extension-installed') === '1') {
+    const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
+    updateExtensionStatusUI(true, ver);
+    return true;
+  }
+
+  window.dispatchEvent(new CustomEvent('wsa-ping-extension'));
+  setTimeout(() => {
+    if (document.documentElement.getAttribute('data-wsa-extension-installed') === '1') {
+      const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
+      updateExtensionStatusUI(true, ver);
+    } else {
+      updateExtensionStatusUI(false);
+      if (forceModal) {
+        document.getElementById('modal-extension-setup')?.showModal();
+      }
+    }
+  }, 350);
+}
+
+function openExtensionSetupModal(force) {
+  verifyExtensionConnection(false);
+  document.getElementById('modal-extension-setup')?.showModal();
+}
+
+function toggleDismissExtensionModalToday(checked) {
+  if (checked) {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('wsa_dismiss_ext_prompt', today);
+  } else {
+    localStorage.removeItem('wsa_dismiss_ext_prompt');
+  }
+}
+
+// Listen for extension ready & pong events
+window.addEventListener('wsa-extension-ready', (e) => {
+  const ver = e.detail?.version || '1.0.0';
+  updateExtensionStatusUI(true, ver);
+});
+window.addEventListener('wsa-pong-extension', (e) => {
+  const ver = e.detail?.version || '1.0.0';
+  updateExtensionStatusUI(true, ver);
+});
+
+// Auto-check on page load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const isInstalled = document.documentElement.getAttribute('data-wsa-extension-installed') === '1';
+    if (isInstalled) {
+      const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
+      updateExtensionStatusUI(true, ver);
+    } else {
+      updateExtensionStatusUI(false);
+      // Auto-prompt modal if not dismissed today
+      const today = new Date().toISOString().slice(0, 10);
+      const dismissed = localStorage.getItem('wsa_dismiss_ext_prompt');
+      if (dismissed !== today) {
+        const modal = document.getElementById('modal-extension-setup');
+        if (modal && !modal.open) {
+          modal.showModal();
+        }
+      }
+    }
+  }, 1000);
+});
+
 function copyExtensionFolder(btn) {
   const input = document.getElementById('ext-folder-path');
   if (input) {
-    input.select();
     navigator.clipboard.writeText(input.value).then(() => {
       const orig = btn.innerText;
       btn.innerText = 'Copied! ✓';
       btn.style.background = '#10b981';
+      btn.style.color = '#fff';
       setTimeout(() => {
         btn.innerText = orig;
-        btn.style.background = '#2563eb';
+        btn.style.background = '';
+        btn.style.color = '';
       }, 2000);
     });
   }
