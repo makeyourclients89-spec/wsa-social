@@ -260,6 +260,44 @@
     return null;
   }
 
+  // Viral Facebook Reels Hashtags Pool
+  const VIRAL_HASHTAGS_POOL = [
+    '#viralreels', '#trending', '#fbreels', '#reelsfb', 
+    '#explorepage', '#fyp', '#viralpost', '#reelkarofeelkaro', 
+    '#reelsvideo', '#dailyreels', '#trend', '#watchthis',
+    '#facebookreels', '#viralvideo'
+  ];
+
+  function getViralHashtags() {
+    const shuffled = [...VIRAL_HASHTAGS_POOL].sort(() => 0.5 - Math.random());
+    const count = Math.random() > 0.35 ? 2 : 1;
+    return shuffled.slice(0, count).join(' ');
+  }
+
+  // Simulate realistic human typing character by character
+  async function typeHumanKeystrokes(editor, text) {
+    editor.focus();
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      try {
+        editor.dispatchEvent(new KeyboardEvent('keydown', { key: char, code: char === ' ' ? 'Space' : `Key${char.toUpperCase()}`, bubbles: true }));
+        document.execCommand('insertText', false, char);
+        editor.dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: char
+        }));
+        editor.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
+      } catch (e) {
+        try { document.execCommand('insertText', false, char); } catch (err) {}
+      }
+      // Natural typing delay: 50ms to 130ms per character
+      const delay = Math.floor(Math.random() * (130 - 50 + 1)) + 50;
+      await sleep(delay);
+    }
+  }
+
   // Insert content into modern Lexical / Draft.js editors with human typing/editing simulation
   async function insertTextIntoEditor(editor, text) {
     // 1. Natural pause before typing/pasting (1.2 to 2.5 seconds)
@@ -735,6 +773,19 @@
     updateHud('5️⃣ Auto-filling Caption & Reel Link...');
     const fullText = task.full_content || (task.caption ? `${task.caption}\n\n${task.post_url}` : task.post_url);
     await insertTextIntoEditor(editor, fullText);
+
+    // Human Typing Viral Hashtags ("har baar caption box me ek ya 2 hashtag type kar ke likho")
+    const viralTags = getViralHashtags();
+    updateHud(`✍️ Typing viral hashtags: <b>${viralTags}</b> (Human Keystrokes)...`);
+    await sleep(600);
+    try {
+      document.execCommand('insertParagraph', false);
+    } catch (e) {
+      document.execCommand('insertText', false, '\n');
+    }
+    await sleep(200);
+    await typeHumanKeystrokes(editor, viralTags);
+    console.log(`✅ WSA: Naturally typed viral hashtags: ${viralTags}`);
 
     // Randomized human-like waiting duration: STRICTLY NEVER LESS THAN 15 SECONDS!
     // Ranges from 18 seconds up to 48 seconds dynamically for organic variation
