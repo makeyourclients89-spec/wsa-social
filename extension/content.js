@@ -260,18 +260,40 @@
     return null;
   }
 
-  // Viral Facebook Reels Hashtags Pool
-  const VIRAL_HASHTAGS_POOL = [
-    '#viralreels', '#trending', '#fbreels', '#reelsfb', 
-    '#explorepage', '#fyp', '#viralpost', '#reelkarofeelkaro', 
-    '#reelsvideo', '#dailyreels', '#trend', '#watchthis',
-    '#facebookreels', '#viralvideo'
+  // Viral / Engaging Keywords Pool (Clean keywords without hashtags)
+  const VIRAL_KEYWORDS_POOL = [
+    'Watch Reel',
+    'Must Watch',
+    'Trending Reel',
+    'Viral Video',
+    'Check This Out',
+    'Watch Full Reel',
+    'Trending Now',
+    'Special Highlight',
+    'Top Reel',
+    'Amazing Video'
   ];
 
-  function getViralHashtags() {
-    const shuffled = [...VIRAL_HASHTAGS_POOL].sort(() => 0.5 - Math.random());
-    const count = Math.random() > 0.35 ? 2 : 1;
-    return shuffled.slice(0, count).join(' ');
+  function getViralKeyword() {
+    const idx = Math.floor(Math.random() * VIRAL_KEYWORDS_POOL.length);
+    return VIRAL_KEYWORDS_POOL[idx];
+  }
+
+  // Format post content: Caption -> 1 Keyword -> GAP (blank line) -> Intact Link URL
+  function buildFormattedPostText(caption, keyword, postUrl) {
+    const parts = [];
+    const cleanCap = (caption || '').trim();
+    if (cleanCap) {
+      parts.push(cleanCap);
+    }
+    if (keyword) {
+      parts.push(keyword);
+    }
+    if (postUrl) {
+      // Adding postUrl with double newline creates a clean gap before the link
+      parts.push(postUrl.trim());
+    }
+    return parts.join('\n\n');
   }
 
   // Simulate realistic human typing character by character
@@ -485,28 +507,14 @@
       }
     }
 
-    // 7. Human Edit Simulation ("caption edit kar ke dekho isse facebook real lage"):
-    // Add space, wait, backspace, and trigger real input events to fool Facebook bot detection
+    // 7. Human Input & Change Event Notification (without modifying or deleting any link text)
     try {
-      await sleep(400);
+      await sleep(300);
       editor.focus();
-
-      // Dispatch real keydown for space
-      editor.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }));
-      document.execCommand('insertText', false, ' ');
-      editor.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: ' ' }));
-
-      // Natural pause between edit keystrokes (300 to 600ms)
-      await sleep(Math.floor(Math.random() * 300) + 300);
-
-      // Backspace the space to leave clean text
-      editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', code: 'Backspace', bubbles: true }));
-      document.execCommand('delete', false);
-      editor.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'deleteContentBackward' }));
-
-      console.log('✅ WSA: Simulated human keystroke edit cycle in editor.');
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      editor.dispatchEvent(new Event('change', { bubbles: true }));
     } catch (e) {
-      console.warn('Human edit simulation fallback ignored:', e);
+      console.warn('Input event notification fallback ignored:', e);
     }
 
     // 8. Dispatch input & change events so React / Lexical marks form as dirty & ready to submit
@@ -910,22 +918,13 @@
       throw new Error('Could not find contenteditable editor inside post dialog.');
     }
 
-    updateHud('5️⃣ Auto-filling Caption & Reel Link...');
-    const fullText = task.full_content || (task.caption ? `${task.caption}\n\n${task.post_url}` : task.post_url);
-    await insertTextIntoEditor(editor, fullText);
+    // 1 Keyword before the link with visible gap, keeping link 100% intact
+    const chosenKeyword = getViralKeyword();
+    updateHud(`5️⃣ Setting up: Caption + Keyword ("${chosenKeyword}") + Gap + Intact Link...`);
 
-    // Human Typing Viral Hashtags ("har baar caption box me ek ya 2 hashtag type kar ke likho")
-    const viralTags = getViralHashtags();
-    updateHud(`✍️ Typing viral hashtags: <b>${viralTags}</b> (Human Keystrokes)...`);
-    await sleep(600);
-    try {
-      document.execCommand('insertParagraph', false);
-    } catch (e) {
-      document.execCommand('insertText', false, '\n');
-    }
-    await sleep(200);
-    await typeHumanKeystrokes(editor, viralTags);
-    console.log(`✅ WSA: Naturally typed viral hashtags: ${viralTags}`);
+    const fullFormattedContent = buildFormattedPostText(task.caption, chosenKeyword, task.post_url);
+    await insertTextIntoEditor(editor, fullFormattedContent);
+    console.log('✅ WSA: Post content filled with keyword, gap and intact link:\n' + fullFormattedContent);
 
     // Active Preview Detection & Human Cadence Loop
     // User Requirement: Preview aane ke baad hi post button click ho, aur minimum 15s wait rahe!
