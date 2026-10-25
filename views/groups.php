@@ -694,8 +694,11 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
       </div>
     </div>
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" class="btn" style="background:#10b981; color:#fff; font-weight:800; font-size:12.5px; padding:9px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.35);">
+        <span>⚡ 1-Click Auto-Installer (.bat)</span>
+      </a>
       <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-extension-setup').showModal()" style="background:#3b82f6; color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:8px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-        <span>🚀 1-Min Extension Setup Guide</span>
+        <span>🚀 Setup Guide / Status</span>
       </button>
     </div>
   </div>
@@ -1574,16 +1577,42 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </button>
   </div>
 
-  <!-- Direct 1-Click Download Button -->
-  <div style="margin-bottom:18px;">
-    <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:14px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(37,99,235,0.3); width:100%;">
-      <span style="font-size:18px;">⬇️</span>
-      <span>Direct Download Extension Package (.zip)</span>
+  <!-- Option 1: 1-Click Windows Auto-Installer -->
+  <div style="background:rgba(16,185,129,0.08); border:1.5px solid #10b981; border-radius:12px; padding:16px; margin-bottom:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <span style="font-size:12.5px; font-weight:800; color:#047857; text-transform:uppercase; letter-spacing:0.5px;">⭐ Sabse Asaan (Recommended)</span>
+      <span style="background:#10b981; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">1-CLICK</span>
+    </div>
+    <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" class="btn" style="background:#10b981; color:#fff; font-weight:800; font-size:14.5px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(16,185,129,0.35); width:100%;">
+      <span style="font-size:18px;">⚡</span>
+      <span>Download 1-Click Windows Auto-Installer (.bat)</span>
     </a>
-    <div style="text-align:center; font-size:11.5px; color:var(--muted); margin-top:6px;">
-      💡 Backup link: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:700;">Direct Server Download</a>
+    <div style="font-size:12px; color:#065f46; margin-top:8px; line-height:1.4;">
+      👉 <b>Download karke bas 1 baar run (double-click) karein!</b><br>
+      Yeh automatically extension files extract karega, path copy karega aur Chrome Extensions open kar dega!
+    </div>
+    <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:6px;">
+      Backup link: <a href="index.php?page=download-extension-installer" style="color:#059669; font-weight:700;">Direct Server Download (.bat)</a>
     </div>
   </div>
+
+  <!-- Option 2: Manual ZIP Download -->
+  <details style="margin-bottom:16px; background:var(--bg-subtle, #f8fafc); border:1px solid var(--line); border-radius:10px; padding:10px 14px;">
+    <summary style="cursor:pointer; font-weight:700; font-size:12.5px; color:var(--ink);">
+      📦 Ya manual ZIP download karna chahte hain? (Click to view)
+    </summary>
+    <div style="margin-top:12px;">
+      <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:700; font-size:13px; padding:10px 14px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <span>⬇️ Download wsa-social-extension.zip</span>
+      </a>
+      <span style="font-size:11.5px; color:var(--muted); margin-left:8px;">
+        (Backup: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:600;">Server Route</a>)
+      </span>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+        ZIP download karke unzip karein aur Chrome me <code>chrome://extensions</code> par jakar Developer mode ON karke <b>Load unpacked</b> se select karein.
+      </div>
+    </div>
+  </details>
 
   <div style="font-weight:800; font-size:13px; margin-bottom:10px; color:var(--ink);">
     Chrome me Enable Karne Ke 3 Simple Steps (Sirf 1 Baar):

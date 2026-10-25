@@ -371,6 +371,22 @@ if ($page === 'api-group-queue-status') {
     exit;
 }
 
+if ($page === 'download-extension-installer') {
+    $installerFile = ROOT_DIR . '/Install-WSA-Extension.bat';
+    if (file_exists($installerFile) && filesize($installerFile) > 0) {
+        header('Content-Type: application/x-bat');
+        header('Content-Disposition: attachment; filename="Install-WSA-Extension.bat"');
+        header('Content-Length: ' . (string)filesize($installerFile));
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($installerFile);
+        exit;
+    }
+
+    flash('error', 'Extension Installer download karne me samasya aayi.');
+    redirect('index.php?page=groups');
+}
+
 if ($page === 'download-extension-zip') {
     $staticZip = ROOT_DIR . '/wsa-social-extension.zip';
     if (file_exists($staticZip) && filesize($staticZip) > 0) {
