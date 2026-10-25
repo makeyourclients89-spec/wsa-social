@@ -298,6 +298,113 @@
     }
   }
 
+  // Detect if Facebook has finished generating the rich Reel / Link Preview card
+  function detectFacebookPreviewCard(dialog) {
+    const scope = dialog || document.querySelector('div[role="dialog"]');
+    if (!scope) return { detected: false, reason: 'Dialog not found' };
+
+    // 1. Check for wide preview thumbnail image (excluding user avatars which are <= 45px)
+    const images = Array.from(scope.querySelectorAll('img'));
+    for (const img of images) {
+      const rect = img.getBoundingClientRect();
+      const src = (img.src || '').toLowerCase();
+      if (rect.width >= 90 && rect.height >= 50) {
+        if (
+          src.includes('fbcdn.net') || 
+          src.includes('scontent') || 
+          src.includes('external') ||
+          src.includes('safe_image')
+        ) {
+          return {
+            detected: true,
+            type: 'THUMBNAIL_IMAGE',
+            details: `Reel thumbnail verified (${Math.round(rect.width)}x${Math.round(rect.height)}px)`
+          };
+        }
+      }
+    }
+
+    // 2. Check for "Remove preview" or attachment close button (Facebook always renders this on link cards)
+    const removeButtons = Array.from(scope.querySelectorAll('div[role="button"], button'));
+    for (const rb of removeButtons) {
+      const label = (rb.getAttribute('aria-label') || rb.innerText || '').toLowerCase();
+      if (
+        label.includes('remove preview') ||
+        label.includes('remove link') ||
+        label.includes('remove attachment') ||
+        label.includes('clear link preview')
+      ) {
+        return {
+          detected: true,
+          type: 'REMOVE_PREVIEW_HANDLE',
+          details: `Attachment close handle found ("${label}")`
+        };
+      }
+    }
+
+    // 3. Check for link domain / reel title card
+    const textElements = Array.from(scope.querySelectorAll('span, div, h2, h3'));
+    for (const el of textElements) {
+      const t = (el.innerText || '').trim().toLowerCase();
+      if (
+        t === 'facebook.com' || 
+        t === 'www.facebook.com' || 
+        t === 'fb.watch' ||
+        t.startsWith('facebook.com/reel')
+      ) {
+        const rect = el.getBoundingClientRect();
+        if (rect.height > 8 && rect.top > 80) {
+          return {
+            detected: true,
+            type: 'DOMAIN_LABEL',
+            details: `Facebook Reel card header detected ("${t}")`
+          };
+        }
+      }
+    }
+
+    return { detected: false, reason: 'Facebook Reel preview card is still fetching from Meta servers...' };
+  }
+
+  // Deep Facebook Diagnostic: Extract exact reason why Post button might be disabled
+  function diagnosePostButtonFailure(dialog) {
+    const scope = dialog || document.querySelector('div[role="dialog"]');
+    const reasons = [];
+
+    // Check 1: Is user joined to this group?
+    const bodyText = (document.body.innerText || '').toLowerCase();
+    if (bodyText.includes('join group to post') || bodyText.includes('join group')) {
+      const joinBtn = document.querySelector('div[aria-label*="Join group" i], div[role="button"]:has(span:contains("Join"))');
+      if (joinBtn) reasons.push('Account has not joined this group (Join Group button detected)');
+    }
+
+    // Check 2: Error banner or warning inside dialog
+    if (scope) {
+      const dialogText = (scope.innerText || '').toLowerCase();
+      if (dialogText.includes('temporarily blocked')) reasons.push('Account is temporarily action-blocked by Facebook');
+      if (dialogText.includes('couldn\'t be shared')) reasons.push('Facebook blocked this URL from being shared');
+      if (dialogText.includes('something went wrong')) reasons.push('Facebook internal server error: Something went wrong');
+      if (dialogText.includes('choose how to interact')) reasons.push('Facebook author switch required before posting');
+      if (dialogText.includes('admin approval')) reasons.push('Group requires Admin Approval before posting');
+    }
+
+    // Check 3: Preview status
+    const preview = detectFacebookPreviewCard(scope);
+    if (!preview.detected) {
+      reasons.push('Facebook could not generate Reel preview card within the timeout');
+    }
+
+    // Check 4: Editor content length
+    if (scope) {
+      const editor = scope.querySelector('[contenteditable="true"]');
+      if (!editor || (editor.innerText || '').trim().length === 0) {
+        reasons.push('Editor was detected as empty by Facebook React state');
+      }
+    }
+
+    return reasons.length > 0 ? reasons.join(' | ') : 'Post button remained locked by Facebook React internal validator';
+  }
+
   // Insert content into modern Lexical / Draft.js editors with human typing/editing simulation
   async function insertTextIntoEditor(editor, text) {
     // 1. Natural pause before typing/pasting (1.2 to 2.5 seconds)
@@ -787,32 +894,65 @@
     await typeHumanKeystrokes(editor, viralTags);
     console.log(`✅ WSA: Naturally typed viral hashtags: ${viralTags}`);
 
-    // Randomized human-like waiting duration: STRICTLY NEVER LESS THAN 15 SECONDS!
-    // Ranges from 18 seconds up to 48 seconds dynamically for organic variation
-    const dynamicWaitSeconds = Math.floor(Math.random() * (48 - 18 + 1)) + 18;
-    console.log(`⏱️ WSA Human Cadence: Waiting ${dynamicWaitSeconds}s before Post button click.`);
+    // Active Preview Detection & Human Cadence Loop
+    // User Requirement: Preview aane ke baad hi post button click ho, aur minimum 15s wait rahe!
+    let previewDetected = false;
+    let previewDetails = '';
+    const maxWaitSeconds = 45;
+    let elapsedSeconds = 0;
 
-    for (let secLeft = dynamicWaitSeconds; secLeft > 0; secLeft--) {
-      updateHud(
-        `⏳ <b>Anti-Bot Timing:</b> Waiting ${secLeft}s before clicking Post...<br><span style="font-size:11px; color:#94a3b8;">Facebook Reel card loading • Human Cadence Active</span>`,
-        `${secLeft}s LEFT`,
-        '#3b82f6'
-      );
+    updateHud('⏳ <b>Waiting for Reel Preview Card:</b> Facebook is scraping video thumbnail...', 'FETCHING', '#3b82f6');
+
+    while (elapsedSeconds < maxWaitSeconds) {
+      elapsedSeconds++;
+
+      // Check if preview card appeared in dialog
+      if (!previewDetected) {
+        const previewCheck = detectFacebookPreviewCard(dialog);
+        if (previewCheck.detected) {
+          previewDetected = true;
+          previewDetails = previewCheck.details;
+          console.log(`🎯 WSA: Facebook Reel preview card verified: ${previewDetails}`);
+        }
+      }
+
+      // Check if minimum 15 seconds have passed AND preview is detected
+      if (elapsedSeconds >= 15 && previewDetected) {
+        updateHud(`✅ <b>Preview Ready!</b> ${previewDetails}<br><small style="color:#94a3b8;">Natural human pause before clicking Post...</small>`, 'READY', '#10b981');
+        await sleep(2500);
+        break;
+      }
 
       // Halfway simulation: simulate human reading / cursor focus check
-      if (secLeft === Math.floor(dynamicWaitSeconds / 2)) {
+      if (elapsedSeconds % 7 === 0) {
         try {
           if (editor) editor.focus();
         } catch (e) {}
       }
 
+      const statusMsg = previewDetected
+        ? `✅ Preview verified! Human safety wait: ${Math.max(0, 15 - elapsedSeconds)}s remaining...`
+        : `⏳ Waiting for Reel preview card (${elapsedSeconds}s / max 45s)...`;
+
+      updateHud(
+        `${statusMsg}<br><span style="font-size:11px; color:#94a3b8;">Anti-Bot Human Simulation Active</span>`,
+        `${elapsedSeconds}s`,
+        previewDetected ? '#10b981' : '#3b82f6'
+      );
+
       await sleep(1000);
+    }
+
+    if (!previewDetected) {
+      console.warn('⚠️ WSA: Preview card took longer than 45s. Proceeding with Post button check.');
     }
 
     updateHud('6️⃣ Locating active "Post" button...');
     const postBtn = await findPostButton(dialog);
     if (!postBtn) {
-      throw new Error('Post button was not found or remained disabled.');
+      const diagReason = diagnosePostButtonFailure(dialog);
+      console.error('❌ WSA Post Button Diagnostic:', diagReason);
+      throw new Error(`Post button was not found or remained disabled. [Reason: ${diagReason}]`);
     }
 
     // Snapshot existing posts & check pre-approval before clicking
