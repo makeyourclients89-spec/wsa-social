@@ -189,7 +189,12 @@ $defaultCommentsPool = [
         <!-- Action Footer: Boost Modal Button -->
         <div style="border-top:1px solid var(--line); padding-top:12px; margin-top:8px;">
           <div style="display:flex; gap:8px;">
-            <button type="button" class="btn" onclick="openBoostModal('<?= h(addslashes($post['id'])) ?>', '<?= h(addslashes($postUrl)) ?>', '<?= h(addslashes(mb_strimwidth($postCaption, 0, 70, '...'))) ?>')" style="flex:1; justify-content:center; background:#10b981; color:#ffffff; font-size:12.5px; font-weight:700; padding:9px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(16,185,129,0.25);">
+            <button type="button" class="btn" 
+              data-post-id="<?= h($post['id']) ?>" 
+              data-post-url="<?= h($postUrl) ?>" 
+              data-snippet="<?= h(preg_replace('/\s+/', ' ', mb_strimwidth($postCaption ?: 'Facebook Post/Reel', 0, 75, '...'))) ?>" 
+              onclick="handleBoostButtonClick(this)" 
+              style="flex:1; justify-content:center; background:#10b981; color:#ffffff; font-size:12.5px; font-weight:700; padding:9px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(16,185,129,0.25);">
               <span>💬 Boost Likes &amp; Comments (<?= count($boosterPages) ?> Pages)</span>
             </button>
           </div>
@@ -497,14 +502,26 @@ $defaultCommentsPool = [
 let currentBoostUrl = '';
 let currentBoostId = '';
 
+function handleBoostButtonClick(btn) {
+  const postId = btn.getAttribute('data-post-id') || '';
+  const postUrl = btn.getAttribute('data-post-url') || '';
+  const snippet = btn.getAttribute('data-snippet') || 'Facebook Post/Reel';
+  openBoostModal(postId, postUrl, snippet);
+}
+
 function openBoostModal(postId, postUrl, snippet) {
   currentBoostId = postId;
   currentBoostUrl = postUrl;
-  document.getElementById('boost_modal_snippet').innerText = snippet || 'Facebook Post/Reel';
-  document.getElementById('boost_modal_link').href = postUrl || '#';
-  document.getElementById('modal_api_post_id').value = postId || '';
-  document.getElementById('modal_api_post_url').value = postUrl || '';
-  document.getElementById('modal-boost-post').showModal();
+  const snippetEl = document.getElementById('boost_modal_snippet');
+  if (snippetEl) snippetEl.innerText = snippet || 'Facebook Post/Reel';
+  const linkEl = document.getElementById('boost_modal_link');
+  if (linkEl) linkEl.href = postUrl || '#';
+  const inputId = document.getElementById('modal_api_post_id');
+  if (inputId) inputId.value = postId || '';
+  const inputUrl = document.getElementById('modal_api_post_url');
+  if (inputUrl) inputUrl.value = postUrl || '';
+  const modal = document.getElementById('modal-boost-post');
+  if (modal) modal.showModal();
 }
 
 function copyAndOpenPageComment(btn, commentText, pageLabel) {

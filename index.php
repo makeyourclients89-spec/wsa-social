@@ -391,10 +391,36 @@ if ($page === 'data-deletion') {
 }
 
 // ----------------------------------------------------------------------
-// Authentication Guard
+// Authentication Guard & Workspace Context Initialization
 // ----------------------------------------------------------------------
 if (!logged_in()) {
     redirect('index.php?page=login');
+}
+
+$allClients = $pdo->query("SELECT * FROM clients WHERE is_active=1 ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$activeClientId = (int)($_SESSION['active_client_id'] ?? 0);
+if ($activeClientId === 0 && count($allClients) === 1) {
+    $activeClientId = (int)$allClients[0]['id'];
+    $_SESSION['active_client_id'] = $activeClientId;
+} elseif ($activeClientId > 0) {
+    $found = false;
+    foreach ($allClients as $cl) {
+        if ((int)$cl['id'] === $activeClientId) {
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        $activeClientId = count($allClients) === 1 ? (int)$allClients[0]['id'] : 0;
+        $_SESSION['active_client_id'] = $activeClientId;
+    }
+}
+$activeClientName = 'All Workspaces';
+foreach ($allClients as $cl) {
+    if ((int)$cl['id'] === $activeClientId) {
+        $activeClientName = (string)$cl['name'];
+        break;
+    }
 }
 
 
@@ -1701,7 +1727,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $numSenders = max(1, count($selectedSenderAccounts));
-        $totalTargetShares = $numSenders * $sharesPerPage;
+        if (!empty($_POST['target_shares'])) {
+            $totalTargetShares = $targetShares;
+        } else {
+            $totalTargetShares = $numSenders * $sharesPerPage;
+        }
 
         // Group Selection: Manual Pick vs Smart Rotation (Har Baar Alag Group)
         $manualGroupIds = array_filter(array_map('intval', (array)($_POST['selected_group_ids'] ?? [])));
@@ -1731,10 +1761,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $grpSt->execute($grpParams);
             $groups = $grpSt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Fallback if all groups are currently queued: pick least recently shared
+            // Fallback if all groups are currently queued or client mismatch: pick least recently shared
             if (empty($groups)) {
-                $grpSql = "SELECT * FROM group_targets WHERE client_id = ? AND is_enabled = 1";
-                $grpParams = [$cId];
+                $grpSql = "SELECT * FROM group_targets WHERE is_enabled = 1";
+                $grpParams = [];
                 if ($nicheCategory !== 'all') {
                     $grpSql .= " AND niche_category = ?";
                     $grpParams[] = $nicheCategory;
@@ -1757,12 +1787,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES(?, ?, ?, ?, NULL, ?, ?, 'queued', ?, datetime('now'))
         ");
 
-        $nowTs = time() + 180; // First share starts in 3 minutes
+        $nowTs = time() + 60; // First share starts in 1 minute
         $scheduledCount = 0;
 
         if ($groupSelectionMode === 'manual' && !empty($manualGroupIds)) {
             // Manual selection: Schedule EVERY selected group, distributing round-robin across selected sender pages!
             foreach ($groups as $idx => $targetGroup) {
+                if ($scheduledCount >= $totalTargetShares) {
+                    break;
+                }
                 $senderAcc = $selectedSenderAccounts[$idx % $numSenders];
                 $scheduledTime = date('Y-m-d H:i:s', $nowTs + ($scheduledCount * $intervalMins * 60));
 
@@ -1779,13 +1812,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $scheduledCount++;
             }
         } else {
-            // Smart Rotation mode: Distribute $sharesPerPage distinct groups per page
+            // Smart Rotation mode: Distribute $sharesPerPage distinct groups per page up to $totalTargetShares
             $groupIndex = 0;
             $totalAvailableGroups = count($groups);
 
             foreach ($selectedSenderAccounts as $senderAcc) {
                 for ($s = 0; $s < $sharesPerPage; $s++) {
-                    if ($groupIndex >= $totalAvailableGroups) {
+                    if ($groupIndex >= $totalAvailableGroups || $scheduledCount >= $totalTargetShares) {
                         break;
                     }
                     $targetGroup = $groups[$groupIndex];
@@ -1803,6 +1836,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $scheduledCount++;
                     $groupIndex++;
+                }
+                if ($scheduledCount >= $totalTargetShares) {
+                    break;
                 }
             }
         }
@@ -2362,31 +2398,6 @@ if ($page === 'export-csv') {
 // ----------------------------------------------------------------------
 // View Rendering Dispatcher with Workspace Context
 // ----------------------------------------------------------------------
-$allClients = $pdo->query("SELECT * FROM clients WHERE is_active=1 ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
-$activeClientId = (int)($_SESSION['active_client_id'] ?? 0);
-if ($activeClientId === 0 && count($allClients) === 1) {
-    $activeClientId = (int)$allClients[0]['id'];
-    $_SESSION['active_client_id'] = $activeClientId;
-} elseif ($activeClientId > 0) {
-    $found = false;
-    foreach ($allClients as $cl) {
-        if ((int)$cl['id'] === $activeClientId) {
-            $found = true;
-            break;
-        }
-    }
-    if (!$found) {
-        $activeClientId = count($allClients) === 1 ? (int)$allClients[0]['id'] : 0;
-        $_SESSION['active_client_id'] = $activeClientId;
-    }
-}
-$activeClientName = 'All Workspaces';
-foreach ($allClients as $cl) {
-    if ((int)$cl['id'] === $activeClientId) {
-        $activeClientName = (string)$cl['name'];
-        break;
-    }
-}
 
 function render(string $viewName, string $title, string $activePage, array $data = []): void {
     global $allClients, $activeClientId, $activeClientName;

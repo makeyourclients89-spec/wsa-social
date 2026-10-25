@@ -203,7 +203,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
               <input type="hidden" name="custom_post_url" value="<?= h($postUrl) ?>">
               <input type="hidden" name="caption" value="<?= h($postCaption) ?>">
               <input type="hidden" name="target_shares" value="5">
-              <input type="hidden" name="interval_minutes" value="30">
+              <input type="hidden" name="interval_minutes" value="2">
               <input type="hidden" name="niche_category" value="all">
               <button type="submit" class="btn" style="width:100%; justify-content:center; background:#1877f2; color:#fff; font-size:11.5px; font-weight:700; padding:8px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
                 <span>⚡ Share to 5 Groups</span>
@@ -211,7 +211,12 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
             </form>
 
             <!-- Like & Comment Booster Modal Trigger -->
-            <button type="button" class="btn light" onclick="openBoostModal('<?= h(addslashes($post['id'])) ?>', '<?= h(addslashes($postUrl)) ?>', '<?= h(addslashes(mb_strimwidth($postCaption, 0, 70, '...'))) ?>')" style="flex:1; justify-content:center; font-size:11.5px; font-weight:700; padding:8px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; color:#059669; border-color:#a7f3d0; background:#f0fdf4;">
+            <button type="button" class="btn light btn-boost-trigger" 
+              data-post-id="<?= h($post['id']) ?>" 
+              data-post-url="<?= h($postUrl) ?>" 
+              data-snippet="<?= h(preg_replace('/\s+/', ' ', mb_strimwidth($postCaption ?: 'Facebook Post/Reel', 0, 75, '...'))) ?>" 
+              onclick="handleBoostButtonClick(this)" 
+              style="flex:1; justify-content:center; font-size:11.5px; font-weight:700; padding:8px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; color:#059669; border-color:#a7f3d0; background:#f0fdf4;">
               <span>💬 Like &amp; Comment</span>
             </button>
           </div>
@@ -1601,14 +1606,47 @@ function copyExtensionFolder(btn) {
 let currentBoostUrl = '';
 let currentBoostId = '';
 
+function handleBoostButtonClick(btn) {
+  const postId = btn.getAttribute('data-post-id') || '';
+  const postUrl = btn.getAttribute('data-post-url') || '';
+  const snippet = btn.getAttribute('data-snippet') || 'Facebook Post/Reel';
+  openBoostModal(postId, postUrl, snippet);
+}
+
 function openBoostModal(postId, postUrl, snippet) {
   currentBoostId = postId;
   currentBoostUrl = postUrl;
-  document.getElementById('boost_modal_snippet').innerText = snippet || 'Facebook Post/Reel';
-  document.getElementById('boost_modal_link').href = postUrl || '#';
-  document.getElementById('boost_input_post_id').value = postId || '';
-  document.getElementById('boost_input_post_url').value = postUrl || '';
-  document.getElementById('modal-boost-post').showModal();
+  const snippetEl = document.getElementById('boost_modal_snippet');
+  if (snippetEl) snippetEl.innerText = snippet || 'Facebook Post/Reel';
+  const linkEl = document.getElementById('boost_modal_link');
+  if (linkEl) linkEl.href = postUrl || '#';
+  const inputId = document.getElementById('boost_input_post_id');
+  if (inputId) inputId.value = postId || '';
+  const inputUrl = document.getElementById('boost_input_post_url');
+  if (inputUrl) inputUrl.value = postUrl || '';
+  const modal = document.getElementById('modal-boost-post');
+  if (modal) modal.showModal();
+}
+
+function copyAndOpenPageComment(btn, commentText, pageLabel) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(commentText).then(function() {
+      const orig = btn.innerText;
+      btn.innerText = 'Copied! ✓';
+      btn.style.background = '#10b981';
+      btn.style.color = '#fff';
+      setTimeout(function() {
+        btn.innerText = orig;
+        btn.style.background = '#eff6ff';
+        btn.style.color = '#1d4ed8';
+      }, 3000);
+    }).catch(function() {
+      btn.innerText = 'Copied! ✓';
+    });
+  }
+  if (currentBoostUrl) {
+    window.open(currentBoostUrl, '_blank');
+  }
 }
 
 function copyCommentText(btn, text) {
