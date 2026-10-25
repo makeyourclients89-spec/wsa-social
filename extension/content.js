@@ -516,89 +516,115 @@
     return true;
   }
 
-  // Find Facebook Post Button (waits for preview to load, checks blue buttons, with auto-force-enable fallback)
+  // Find Facebook Post Button (checks text, aria, Hindi, geometry, with auto-force-enable fallback)
   async function findPostButton(dialog) {
-    const dialogScope = dialog || document.querySelector('div[role="dialog"]');
+    for (let attempts = 0; attempts < 25; attempts++) {
+      // Always query current active dialog in case Facebook re-rendered the modal
+      const currentDialog = document.querySelector('div[role="dialog"]') || dialog;
+      if (!currentDialog) {
+        await sleep(600);
+        continue;
+      }
 
-    for (let attempts = 0; attempts < 30; attempts++) {
-      const candidateButtons = Array.from(
-        dialogScope
-          ? dialogScope.querySelectorAll('div[role="button"], button')
-          : document.querySelectorAll('div[role="dialog"] div[role="button"], div[role="dialog"] button')
-      );
+      const dialogRect = currentDialog.getBoundingClientRect();
+      const allButtons = Array.from(currentDialog.querySelectorAll('div[role="button"], button'));
 
-      let detectedPostBtn = null;
+      let bestCandidate = null;
 
-      for (const b of candidateButtons) {
+      // 1. Text & Aria-label matching (Supports English, Hindi, and generic action labels)
+      for (const b of allButtons) {
         const ariaLabel = (b.getAttribute('aria-label') || '').trim().toLowerCase();
         const text = (b.innerText || '').trim().toLowerCase();
 
-        // Skip close, attachment, or emoji icon buttons
+        // Skip close and utility icon buttons
         if (
-          ariaLabel.includes('close') ||
-          ariaLabel.includes('photo') ||
-          ariaLabel.includes('video') ||
-          ariaLabel.includes('tag') ||
+          ariaLabel.includes('close') || 
+          ariaLabel.includes('photo') || 
+          ariaLabel.includes('video') || 
+          ariaLabel.includes('tag') || 
           ariaLabel.includes('feeling') ||
-          ariaLabel.includes('location')
+          ariaLabel.includes('remove') ||
+          text === '✕' ||
+          text === 'x'
         ) {
           continue;
         }
 
-        const isPostCandidate = (
+        const isMatch = (
           ariaLabel === 'post' ||
           ariaLabel === 'publish' ||
+          ariaLabel === 'next' ||
           ariaLabel.includes('post to') ||
+          ariaLabel.includes('publish to') ||
+          ariaLabel.includes('share') ||
+          ariaLabel.includes('submit') ||
+          ariaLabel.includes('पोस्ट') ||
+          ariaLabel.includes('प्रकाशित') ||
           text === 'post' ||
           text === 'publish' ||
-          text.includes('post to') ||
+          text === 'next' ||
           text === 'submit' ||
-          text.includes('submit') ||
+          text.includes('post to') ||
+          text.includes('publish') ||
+          text.includes('पोस्ट') ||
           b.getAttribute('type') === 'submit'
         );
 
-        if (isPostCandidate) {
-          detectedPostBtn = b;
-
+        if (isMatch) {
+          bestCandidate = b;
           const ariaDisabled = b.getAttribute('aria-disabled');
-          const hasDisabledAttr = b.hasAttribute('disabled');
-          const isDisabled = ariaDisabled === 'true' || hasDisabledAttr === true;
-
-          // If button is enabled naturally, return it immediately
+          const isDisabled = ariaDisabled === 'true' || b.hasAttribute('disabled');
           if (!isDisabled) {
-            console.log('✅ WSA: Active Post button ready!', b);
+            console.log('✅ WSA: Active Post button found by text/aria:', b);
             return b;
           }
         }
       }
 
-      // If no explicit candidate by text, check for the primary colored submit button in the dialog footer
-      if (!detectedPostBtn && dialogScope) {
-        const footerButtons = Array.from(dialogScope.querySelectorAll('div[role="button"][tabindex="0"]'));
-        for (const fb of footerButtons) {
-          const compStyle = window.getComputedStyle(fb);
-          const bg = compStyle.backgroundColor || '';
-          // Check if button background is Facebook blue (rgb(8, 102, 255) / rgb(24, 119, 242) / etc.)
-          if (bg.includes('8, 102, 255') || bg.includes('24, 119, 242') || bg.includes('33, 111, 219')) {
-            detectedPostBtn = fb;
-            const ariaDisabled = fb.getAttribute('aria-disabled');
-            if (ariaDisabled !== 'true' && !fb.hasAttribute('disabled')) {
-              console.log('✅ WSA: Active Facebook Blue Post button found in dialog!', fb);
-              return fb;
-            }
+      // 2. Geometric Matching: Primary action button in the bottom 35% of modal
+      if (!bestCandidate) {
+        const bottomButtons = allButtons.filter(b => {
+          const r = b.getBoundingClientRect();
+          const isInBottomArea = r.top >= dialogRect.top + dialogRect.height * 0.60;
+          const isWide = r.width >= 100;
+          return isInBottomArea && isWide;
+        });
+
+        if (bottomButtons.length > 0) {
+          // The lowest button in the modal is the submit button
+          bottomButtons.sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
+          bestCandidate = bottomButtons[0];
+          const ariaDisabled = bestCandidate.getAttribute('aria-disabled');
+          const isDisabled = ariaDisabled === 'true' || bestCandidate.hasAttribute('disabled');
+          if (!isDisabled) {
+            console.log('✅ WSA: Active Post button found by geometry in footer:', bestCandidate);
+            return bestCandidate;
           }
         }
       }
 
-      // If the Post button is found but stays disabled (e.g., Reel preview taking time or React state desync),
-      // after 12 attempts (~8 seconds) force-enable it so the post publishes cleanly!
-      if (detectedPostBtn && attempts >= 12) {
-        console.log('⚡ WSA: Force-enabling Post button to complete publication...', detectedPostBtn);
-        detectedPostBtn.removeAttribute('disabled');
-        detectedPostBtn.setAttribute('aria-disabled', 'false');
-        detectedPostBtn.style.pointerEvents = 'auto';
-        detectedPostBtn.style.opacity = '1';
-        return detectedPostBtn;
+      // 3. If bestCandidate found but disabled by Facebook:
+      if (bestCandidate) {
+        const editor = currentDialog.querySelector('[contenteditable="true"]');
+        if (editor && attempts % 2 === 0) {
+          try {
+            editor.focus();
+            document.execCommand('insertText', false, ' ');
+            document.execCommand('delete', false);
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            editor.dispatchEvent(new Event('change', { bubbles: true }));
+          } catch (e) {}
+        }
+
+        // If after 5 attempts (~3.5s) it remains disabled, force-enable it so post publishes!
+        if (attempts >= 5) {
+          console.log('⚡ WSA: Force-enabling candidate Post button to submit...', bestCandidate);
+          bestCandidate.removeAttribute('disabled');
+          bestCandidate.setAttribute('aria-disabled', 'false');
+          bestCandidate.style.pointerEvents = 'auto';
+          bestCandidate.style.opacity = '1';
+          return bestCandidate;
+        }
       }
 
       await sleep(700);

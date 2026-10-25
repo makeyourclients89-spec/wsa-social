@@ -1586,7 +1586,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   <!-- Primary Action: Direct ZIP Download (Manual Install) -->
   <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:18px; margin-bottom:16px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-      <span style="font-size:12.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.2)</span>
+      <span style="font-size:12.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.3)</span>
       <span style="background:#2563eb; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
     </div>
     <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:14.5px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%;">
@@ -1639,7 +1639,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
 <script>
 // WSA Extension Realtime Detection Engine
-const LATEST_EXT_VERSION = '1.2.2';
+const LATEST_EXT_VERSION = '1.2.3';
 let isWsaExtensionActive = false;
 
 function compareVersions(v1, v2) {
