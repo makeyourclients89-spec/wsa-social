@@ -374,7 +374,14 @@
     // Check 1: Is user joined to this group?
     const bodyText = (document.body.innerText || '').toLowerCase();
     if (bodyText.includes('join group to post') || bodyText.includes('join group')) {
-      const joinBtn = document.querySelector('div[aria-label*="Join group" i], div[role="button"]:has(span:contains("Join"))');
+      let joinBtn = document.querySelector('div[aria-label*="Join group" i], div[aria-label*="Join Group"]');
+      if (!joinBtn) {
+        const buttons = Array.from(document.querySelectorAll('div[role="button"], button'));
+        joinBtn = buttons.find(b => {
+          const t = (b.innerText || '').trim().toLowerCase();
+          return t === 'join group' || t === 'join' || t.startsWith('join');
+        });
+      }
       if (joinBtn) reasons.push('Account has not joined this group (Join Group button detected)');
     }
 
