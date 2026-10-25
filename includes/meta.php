@@ -282,12 +282,72 @@ class MetaGraph
     }
 
     /**
+     * Resolves the canonical, working public Facebook URL for a given post or reel
+     */
+    public static function resolvePostUrl(array $post, string $pageId = ''): string
+    {
+        if (empty($post)) {
+            return '';
+        }
+        $permalink = trim((string)($post['permalink_url'] ?? ''));
+        $att = $post['attachments']['data'][0] ?? null;
+        $statusType = (string)($post['status_type'] ?? '');
+        $postId = (string)($post['id'] ?? '');
+
+        // 1. Reels / Watch URLs are already canonical and valid
+        if (str_contains($permalink, '/reel/') || str_contains($permalink, '/watch/')) {
+            return $permalink;
+        }
+        if (!empty($att['target']['url']) && (str_contains($att['target']['url'], '/reel/') || str_contains($att['target']['url'], '/watch/'))) {
+            return $att['target']['url'];
+        }
+
+        // 2. Photo Posts: Graph API permalink_url often contains an internal/app-scoped page ID that fails with 400.
+        // The direct photo.php permalink from attachments reliably works 100%.
+        if ($statusType === 'added_photos' || ($att['type'] ?? '') === 'photo') {
+            if (!empty($att['target']['url']) && str_contains($att['target']['url'], 'photo.php')) {
+                return $att['target']['url'];
+            }
+            if (!empty($att['url']) && str_contains($att['url'], 'photo.php')) {
+                return $att['url'];
+            }
+            if (!empty($att['target']['id'])) {
+                return 'https://www.facebook.com/photo.php?fbid=' . $att['target']['id'];
+            }
+        }
+
+        // 3. Attachment with direct Facebook media permalink (reel, watch, photo)
+        if (!empty($att['target']['url'])) {
+            $tUrl = $att['target']['url'];
+            if (str_contains($tUrl, '/reel/') || str_contains($tUrl, '/watch/') || str_contains($tUrl, 'photo.php') || str_contains($tUrl, 'story_fbid')) {
+                return $tUrl;
+            }
+        }
+
+        // 4. Construct canonical permalink.php?story_fbid=...&id=...
+        // Meta post IDs are formatted as {page_id}_{story_fbid}
+        $parts = explode('_', $postId);
+        $realPageId = $pageId !== '' ? $pageId : ($parts[0] ?? '');
+        $storyFbid = $parts[1] ?? $parts[0] ?? '';
+
+        if (!empty($storyFbid) && !empty($realPageId)) {
+            return "https://www.facebook.com/permalink.php?story_fbid={$storyFbid}&id={$realPageId}";
+        }
+
+        // 5. Fallbacks
+        if ($permalink !== '') {
+            return $permalink;
+        }
+        return $postId !== '' ? ('https://www.facebook.com/' . $postId) : 'https://www.facebook.com';
+    }
+
+    /**
      * Fetch the most recent posts or reels published on a Facebook Page
      */
     public static function fetchLatestPagePosts(string $pageId, string $pageToken, int $limit = 5): array
     {
         $url = self::GRAPH_API_BASE . '/' . urlencode($pageId) . '/posts?' . http_build_query([
-            'fields' => 'id,message,permalink_url,created_time,status_type,full_picture',
+            'fields' => 'id,message,permalink_url,created_time,status_type,full_picture,attachments{url,target,type}',
             'limit' => $limit,
             'access_token' => $pageToken,
         ]);
@@ -295,7 +355,12 @@ class MetaGraph
         if (isset($res['error']) || empty($res['data'])) {
             return [];
         }
-        return $res['data'];
+        $posts = $res['data'];
+        foreach ($posts as &$post) {
+            $post['permalink_url'] = self::resolvePostUrl($post, $pageId);
+        }
+        unset($post);
+        return $posts;
     }
 
     /**

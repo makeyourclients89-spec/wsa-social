@@ -329,9 +329,7 @@ class QueueEngine {
         }
 
         $latestPost = $posts[0];
-        $postUrl = !empty($latestPost['permalink_url']) 
-            ? (string)$latestPost['permalink_url'] 
-            : ('https://www.facebook.com/' . $latestPost['id']);
+        $postUrl = MetaGraph::resolvePostUrl($latestPost, (string)$account['external_id']);
         $postCaption = trim((string)($latestPost['message'] ?? ''));
         $postId = (string)$latestPost['id'];
 

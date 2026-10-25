@@ -162,8 +162,8 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px; margin-bottom:28px;">
     <?php foreach ($sevenDayPosts as $idx => $post): ?>
       <?php 
-        $isReel = (str_contains($post['permalink_url'] ?? '', '/reel/') || ($post['status_type'] ?? '') === 'added_video');
-        $postUrl = !empty($post['permalink_url']) ? $post['permalink_url'] : ('https://www.facebook.com/' . $post['id']);
+        $postUrl = MetaGraph::resolvePostUrl($post, (string)($defaultMainPage['external_id'] ?? ''));
+        $isReel = (str_contains($postUrl, '/reel/') || str_contains($postUrl, '/watch/') || ($post['status_type'] ?? '') === 'added_video');
         $postCaption = trim((string)($post['message'] ?? ''));
         $createdTime = !empty($post['created_time']) ? date('d M Y, h:i A', strtotime($post['created_time'])) : 'Recent';
       ?>
@@ -421,7 +421,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:11.5px; color:var(--muted);">
           <span>📅 <?= !empty($cachedLatestPost['created_time']) ? date('d M Y, h:i A', strtotime($cachedLatestPost['created_time'])) : 'Recent' ?></span>
-          <a href="<?= h($cachedLatestPost['permalink_url'] ?? ('https://www.facebook.com/' . $cachedLatestPost['id'])) ?>" target="_blank" rel="noopener" style="color:#1877f2; font-weight:700; text-decoration:none;">
+          <a href="<?= h(MetaGraph::resolvePostUrl($cachedLatestPost, (string)($defaultMainPage['external_id'] ?? ''))) ?>" target="_blank" rel="noopener" style="color:#1877f2; font-weight:700; text-decoration:none;">
             Facebook Par Dekhein ↗
           </a>
         </div>
@@ -478,8 +478,8 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
           <optgroup label="🎬 WSA Digital Agency — Live Posts &amp; Reels">
             <?php foreach ($livePagePosts as $lp): ?>
               <?php 
-                $isReel = (str_contains($lp['permalink_url'] ?? '', '/reel/') || ($lp['status_type'] ?? '') === 'added_video');
-                $pUrl = !empty($lp['permalink_url']) ? $lp['permalink_url'] : ('https://www.facebook.com/' . $lp['id']);
+                $pUrl = MetaGraph::resolvePostUrl($lp, (string)($defaultMainPage['external_id'] ?? ''));
+                $isReel = (str_contains($pUrl, '/reel/') || str_contains($pUrl, '/watch/') || ($lp['status_type'] ?? '') === 'added_video');
                 $dateStr = !empty($lp['created_time']) ? date('d M, h:i A', strtotime($lp['created_time'])) : '';
                 $snip = mb_strimwidth(trim($lp['message'] ?? 'Facebook Post'), 0, 70, '...');
                 $caption = trim($lp['message'] ?? '');
@@ -504,7 +504,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
       <div style="margin-top:12px;">
         <label for="queue_custom_url" style="font-size:12px; font-weight:700; color:var(--ink);">Post / Reel Direct Link:
-          <input id="queue_custom_url" name="custom_post_url" placeholder="https://www.facebook.com/... ya custom link" style="margin-top:4px;" value="<?= !empty($livePagePosts[0]['permalink_url']) ? h($livePagePosts[0]['permalink_url']) : '' ?>">
+          <input id="queue_custom_url" name="custom_post_url" placeholder="https://www.facebook.com/... ya custom link" style="margin-top:4px;" value="<?= !empty($livePagePosts[0]) ? h(MetaGraph::resolvePostUrl($livePagePosts[0], (string)($defaultMainPage['external_id'] ?? ''))) : '' ?>">
         </label>
       </div>
 
