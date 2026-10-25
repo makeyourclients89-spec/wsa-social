@@ -200,6 +200,28 @@
     </div>
   </div>
 
+  <!-- Connected Server Auto-Sync Bar -->
+  <div style="background:#1e293b; border:1px solid #334155; border-radius:6px; padding:6px 10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+    <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+      <span id="dot-server-status" style="color:#10b981; font-size:10px;">🟢</span>
+      <span style="color:#94a3b8;">Server:</span>
+      <span id="label-server-url" style="color:#60a5fa; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">Auto-Syncing...</span>
+    </div>
+    <button id="btn-edit-server" type="button" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:11px;" title="Edit or check Server URL">✏️ Edit</button>
+  </div>
+
+  <div id="box-edit-server" style="display:none; background:#020617; border:1px solid #3b82f6; border-radius:6px; padding:8px; margin-bottom:12px;">
+    <div style="font-size:10.5px; color:#94a3b8; margin-bottom:4px;">WSA Social Dashboard Base URL:</div>
+    <input type="text" id="input-server-url" style="width:100%; padding:6px 8px; font-size:11px; background:#1e293b; color:#fff; border:1px solid #475569; border-radius:4px; margin-bottom:6px; box-sizing:border-box;" placeholder="https://ideal-space-...app.github.dev/">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:10px; color:#10b981;">💡 Auto-syncs when panel is open</span>
+      <div style="display:flex; gap:6px;">
+        <button id="btn-cancel-server" type="button" style="padding:3px 8px; font-size:10.5px; border-radius:4px; background:#334155; color:#fff; border:none; cursor:pointer;">Cancel</button>
+        <button id="btn-save-server" type="button" style="padding:3px 8px; font-size:10.5px; border-radius:4px; background:#2563eb; color:#fff; border:none; cursor:pointer; font-weight:700;">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-val" id="stat-queued">-</div>

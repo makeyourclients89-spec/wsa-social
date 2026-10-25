@@ -38,6 +38,8 @@ if ($heartbeat) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="WSA Multi-Channel Publisher - Enterprise AI social media, blogging, and multi-network management platform.">
+  <meta name="wsa-social-app" content="1">
+  <meta name="wsa-active-client-id" content="<?= (int)($activeClientId ?? 2) ?>">
   <title><?= h($title) ?> - <?= APP_NAME ?></title>
   <link rel="stylesheet" href="assets/app.css?v=<?= filemtime(__DIR__ . '/../assets/app.css') ?>">
   <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/../assets/app.js') ?>" defer></script>

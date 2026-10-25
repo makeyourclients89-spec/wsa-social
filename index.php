@@ -171,6 +171,7 @@ if ($page === 'api-group-queue-next') {
 
     $ignoreTime = !empty($_GET['ignore_time']) && ($_GET['ignore_time'] === '1' || $_GET['ignore_time'] === 'true');
     $itemId = !empty($_GET['item_id']) ? (int)$_GET['item_id'] : 0;
+    $clientId = !empty($_GET['client_id']) ? (int)$_GET['client_id'] : (int)($activeClientId ?? 0);
     $now = now();
 
     if ($itemId > 0) {
@@ -186,33 +187,43 @@ if ($page === 'api-group-queue-next') {
                              LIMIT 1");
         $st->execute([$itemId]);
     } elseif ($ignoreTime) {
-        $st = $pdo->prepare("SELECT q.id, q.client_id, q.group_id, q.post_url, q.caption, q.status, q.scheduled_for,
-                                    gt.name AS group_name, gt.group_url,
-                                    sp.id AS sender_id, sp.name AS sender_name,
-                                    a.id AS account_id, a.label AS account_name, a.external_id AS account_external_id
-                             FROM group_share_queue q
-                             JOIN group_targets gt ON gt.id = q.group_id
-                             LEFT JOIN sender_profiles sp ON sp.id = q.sender_profile_id
-                             LEFT JOIN accounts a ON a.id = q.sender_account_id
-                             WHERE q.status = 'queued'
-                             ORDER BY q.scheduled_for ASC, q.id ASC
-                             LIMIT 1");
-        $st->execute();
+        $sql = "SELECT q.id, q.client_id, q.group_id, q.post_url, q.caption, q.status, q.scheduled_for,
+                       gt.name AS group_name, gt.group_url,
+                       sp.id AS sender_id, sp.name AS sender_name,
+                       a.id AS account_id, a.label AS account_name, a.external_id AS account_external_id
+                FROM group_share_queue q
+                JOIN group_targets gt ON gt.id = q.group_id
+                LEFT JOIN sender_profiles sp ON sp.id = q.sender_profile_id
+                LEFT JOIN accounts a ON a.id = q.sender_account_id
+                WHERE " . ($clientId > 0 ? "q.client_id = ? AND " : "") . "q.status = 'queued'
+                ORDER BY q.scheduled_for ASC, q.id ASC
+                LIMIT 1";
+        $st = $pdo->prepare($sql);
+        if ($clientId > 0) {
+            $st->execute([$clientId]);
+        } else {
+            $st->execute();
+        }
     } else {
         // Scheduled time check with a 60-second window
         $threshold = date('Y-m-d H:i:s', time() + 60);
-        $st = $pdo->prepare("SELECT q.id, q.client_id, q.group_id, q.post_url, q.caption, q.status, q.scheduled_for,
-                                    gt.name AS group_name, gt.group_url,
-                                    sp.id AS sender_id, sp.name AS sender_name,
-                                    a.id AS account_id, a.label AS account_name, a.external_id AS account_external_id
-                             FROM group_share_queue q
-                             JOIN group_targets gt ON gt.id = q.group_id
-                             LEFT JOIN sender_profiles sp ON sp.id = q.sender_profile_id
-                             LEFT JOIN accounts a ON a.id = q.sender_account_id
-                             WHERE q.status = 'queued' AND q.scheduled_for <= ?
-                             ORDER BY q.scheduled_for ASC, q.id ASC
-                             LIMIT 1");
-        $st->execute([$threshold]);
+        $sql = "SELECT q.id, q.client_id, q.group_id, q.post_url, q.caption, q.status, q.scheduled_for,
+                       gt.name AS group_name, gt.group_url,
+                       sp.id AS sender_id, sp.name AS sender_name,
+                       a.id AS account_id, a.label AS account_name, a.external_id AS account_external_id
+                FROM group_share_queue q
+                JOIN group_targets gt ON gt.id = q.group_id
+                LEFT JOIN sender_profiles sp ON sp.id = q.sender_profile_id
+                LEFT JOIN accounts a ON a.id = q.sender_account_id
+                WHERE " . ($clientId > 0 ? "q.client_id = ? AND " : "") . "q.status = 'queued' AND q.scheduled_for <= ?
+                ORDER BY q.scheduled_for ASC, q.id ASC
+                LIMIT 1";
+        $st = $pdo->prepare($sql);
+        if ($clientId > 0) {
+            $st->execute([$clientId, $threshold]);
+        } else {
+            $st->execute([$threshold]);
+        }
     }
 
     $item = $st->fetch(PDO::FETCH_ASSOC);
@@ -239,7 +250,8 @@ if ($page === 'api-group-queue-next') {
             ]
         ], JSON_UNESCAPED_SLASHES);
     } else {
-        $nextSt = $pdo->query("SELECT scheduled_for FROM group_share_queue WHERE status = 'queued' ORDER BY scheduled_for ASC LIMIT 1");
+        $nextSql = "SELECT scheduled_for FROM group_share_queue WHERE " . ($clientId > 0 ? "client_id = {$clientId} AND " : "") . "status = 'queued' ORDER BY scheduled_for ASC LIMIT 1";
+        $nextSt = $pdo->query($nextSql);
         $nextScheduled = $nextSt ? $nextSt->fetchColumn() : null;
 
         echo json_encode([
@@ -347,17 +359,33 @@ if ($page === 'api-group-queue-status') {
         exit;
     }
 
-    $queuedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'queued'")->fetchColumn();
-    $sharedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'shared'")->fetchColumn();
-    $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'pending_approval'")->fetchColumn();
-    $todayShared = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'shared' AND DATE(shared_at) = DATE('now', 'localtime')")->fetchColumn();
+    $cId = !empty($_GET['client_id']) ? (int)$_GET['client_id'] : (int)($activeClientId ?? 0);
 
-    $nextDue = $pdo->query("SELECT q.id, q.scheduled_for, gt.name group_name, a.label acc_name 
-                            FROM group_share_queue q 
-                            JOIN group_targets gt ON gt.id = q.group_id 
-                            LEFT JOIN accounts a ON a.id = q.sender_account_id 
-                            WHERE q.status = 'queued' 
-                            ORDER BY q.scheduled_for ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    if ($cId > 0) {
+        $queuedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE client_id = {$cId} AND status = 'queued'")->fetchColumn();
+        $sharedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE client_id = {$cId} AND status = 'shared'")->fetchColumn();
+        $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE client_id = {$cId} AND status = 'pending_approval'")->fetchColumn();
+        $todayShared = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE client_id = {$cId} AND status = 'shared' AND DATE(shared_at) = DATE('now', 'localtime')")->fetchColumn();
+
+        $nextDue = $pdo->query("SELECT q.id, q.scheduled_for, gt.name group_name, a.label acc_name 
+                                FROM group_share_queue q 
+                                JOIN group_targets gt ON gt.id = q.group_id 
+                                LEFT JOIN accounts a ON a.id = q.sender_account_id 
+                                WHERE q.client_id = {$cId} AND q.status = 'queued' 
+                                ORDER BY q.scheduled_for ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    } else {
+        $queuedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'queued'")->fetchColumn();
+        $sharedCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'shared'")->fetchColumn();
+        $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'pending_approval'")->fetchColumn();
+        $todayShared = (int)$pdo->query("SELECT COUNT(*) FROM group_share_queue WHERE status = 'shared' AND DATE(shared_at) = DATE('now', 'localtime')")->fetchColumn();
+
+        $nextDue = $pdo->query("SELECT q.id, q.scheduled_for, gt.name group_name, a.label acc_name 
+                                FROM group_share_queue q 
+                                JOIN group_targets gt ON gt.id = q.group_id 
+                                LEFT JOIN accounts a ON a.id = q.sender_account_id 
+                                WHERE q.status = 'queued' 
+                                ORDER BY q.scheduled_for ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    }
 
     echo json_encode([
         'success' => true,

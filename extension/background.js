@@ -1,6 +1,7 @@
 /**
  * WSA Social - Auto Facebook Group Share Background Service Worker
  * Coordinates queue polling, tab opening, and reporting to WSA Social Backend.
+ * Version 1.1.0: Supports Dynamic Panel URL Auto-Sync, Human Timing & Client Scoping.
  */
 
 const DEFAULT_SERVER_URL = 'http://localhost/wsa-social/';
@@ -9,7 +10,7 @@ let currentTabId = null;
 
 // Initialize on install or startup
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(['autopilot_enabled', 'server_url', 'interval_minutes'], (data) => {
+  chrome.storage.local.get(['autopilot_enabled', 'server_url', 'interval_minutes', 'active_client_id'], (data) => {
     if (data.autopilot_enabled === undefined) {
       chrome.storage.local.set({ autopilot_enabled: true });
     }
@@ -23,7 +24,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
   // Set recurring alarm every 1 minute
   chrome.alarms.create('wsa_queue_poller', { periodInMinutes: 1 });
-  logEvent('WSA Extension installed & alarm initialized');
+  logEvent('WSA Extension v1.1.0 installed & alarm initialized');
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -40,25 +41,38 @@ function logEvent(msg) {
   chrome.storage.local.get(['recent_logs'], (data) => {
     const logs = data.recent_logs || [];
     logs.unshift(entry);
-    if (logs.length > 30) logs.pop();
+    if (logs.length > 35) logs.pop();
     chrome.storage.local.set({ recent_logs: logs });
   });
 }
 
 // Check server for due task and execute
-async function checkAndRunNext(ignoreTime = false) {
+async function checkAndRunNext(ignoreTime = false, forcedClientId = null, forcedItemId = null) {
   if (isProcessing) {
     console.log('WSA Auto-Pilot: Already processing an item, skipping this tick.');
     return { success: false, reason: 'BUSY' };
   }
 
-  const { autopilot_enabled, server_url } = await chrome.storage.local.get(['autopilot_enabled', 'server_url']);
+  const { autopilot_enabled, server_url, active_client_id } = await chrome.storage.local.get([
+    'autopilot_enabled',
+    'server_url',
+    'active_client_id'
+  ]);
+
   if (!autopilot_enabled && !ignoreTime) {
     return { success: false, reason: 'PAUSED' };
   }
 
   const baseUrl = server_url || DEFAULT_SERVER_URL;
-  const endpoint = `${baseUrl.replace(/\/$/, '')}/index.php?page=api-group-queue-next${ignoreTime ? '&ignore_time=1' : ''}`;
+  const targetClient = forcedClientId || active_client_id || 2;
+
+  const params = new URLSearchParams();
+  params.append('page', 'api-group-queue-next');
+  if (ignoreTime) params.append('ignore_time', '1');
+  if (targetClient) params.append('client_id', targetClient);
+  if (forcedItemId) params.append('item_id', forcedItemId);
+
+  const endpoint = `${baseUrl.replace(/\/$/, '')}/index.php?${params.toString()}`;
 
   try {
     const res = await fetch(endpoint, { cache: 'no-cache' });
@@ -80,20 +94,20 @@ async function checkAndRunNext(ignoreTime = false) {
     const tab = await chrome.tabs.create({ url: item.group_url, active: true });
     currentTabId = tab.id;
 
-    // Safety timeout: if posting does not complete in 90 seconds, reset lock
+    // Safety timeout: 180 seconds to comfortably allow human timing simulation (15-50s)
     setTimeout(() => {
       if (isProcessing && currentTabId === tab.id) {
-        logEvent(`⚠️ Task #${item.id} timed out after 90 seconds.`);
+        logEvent(`⚠️ Task #${item.id} timed out after 180 seconds.`);
         isProcessing = false;
         currentTabId = null;
         chrome.storage.local.remove('active_task');
       }
-    }, 90000);
+    }, 180000);
 
     return { success: true, item };
   } catch (err) {
     console.error('WSA Queue Check Error:', err);
-    logEvent(`Error checking queue: ${err.message}`);
+    logEvent(`Error contacting ${baseUrl}: ${err.message}`);
     isProcessing = false;
     return { success: false, error: err.message };
   }
@@ -120,8 +134,23 @@ async function reportShareComplete(result) {
   }
 }
 
-// Listen for messages from content scripts and popup
+// Listen for messages from content scripts, bridge, and popup
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+  // Sync URL and client from active WSA Dashboard tab
+  if (req.action === 'SYNC_WSA_PANEL') {
+    const newUrl = req.server_url;
+    const clientId = req.client_id || null;
+    chrome.storage.local.set({
+      server_url: newUrl,
+      active_client_id: clientId,
+      last_panel_seen: Date.now()
+    }, () => {
+      logEvent(`🔗 Synced with active dashboard: ${newUrl}`);
+      sendResponse({ success: true, synced_url: newUrl });
+    });
+    return true;
+  }
+
   if (req.action === 'GET_ACTIVE_TASK') {
     chrome.storage.local.get(['active_task'], (data) => {
       sendResponse({ task: data.active_task || null });
@@ -132,8 +161,8 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   if (req.action === 'TASK_COMPLETED') {
     const result = req.result;
     logEvent(`✅ Content script completed task #${result.queue_id} (Status: ${result.status})`);
-    
-    // Update local database
+
+    // Update server database
     reportShareComplete(result).then(() => {
       // Clear active task
       chrome.storage.local.remove('active_task');
@@ -153,7 +182,10 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   }
 
   if (req.action === 'TRIGGER_NOW') {
-    checkAndRunNext(true).then((res) => {
+    if (req.server_url) {
+      chrome.storage.local.set({ server_url: req.server_url });
+    }
+    checkAndRunNext(true, req.client_id, req.item_id).then((res) => {
       sendResponse(res);
     });
     return true;
@@ -170,13 +202,28 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     return true;
   }
 
+  if (req.action === 'UPDATE_SERVER_URL') {
+    const newUrl = (req.server_url || '').trim();
+    if (newUrl) {
+      chrome.storage.local.set({ server_url: newUrl }, () => {
+        logEvent(`Server URL updated manually to: ${newUrl}`);
+        sendResponse({ success: true });
+      });
+    } else {
+      sendResponse({ success: false, error: 'Empty URL' });
+    }
+    return true;
+  }
+
   if (req.action === 'GET_STATE') {
-    chrome.storage.local.get(['autopilot_enabled', 'recent_logs', 'active_task'], (data) => {
+    chrome.storage.local.get(['autopilot_enabled', 'recent_logs', 'active_task', 'server_url', 'active_client_id'], (data) => {
       sendResponse({
         isProcessing,
         autopilot_enabled: !!data.autopilot_enabled,
         active_task: data.active_task || null,
-        recent_logs: data.recent_logs || []
+        recent_logs: data.recent_logs || [],
+        server_url: data.server_url || DEFAULT_SERVER_URL,
+        active_client_id: data.active_client_id || 2
       });
     });
     return true;

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WSA Social - Auto Facebook Group Share",
-  "version": "1.0.0",
-  "description": "Zero-Click Automatic Sharing of Reels and Posts to Facebook Groups with Auto Approval Detection.",
+  "version": "1.1.0",
+  "description": "Zero-Click Automatic Sharing of Reels and Posts to Facebook Groups with Human Cadence Simulation & Auto-Sync.",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -49,7 +49,9 @@
       "matches": [
         "http://localhost/*",
         "http://127.0.0.1/*",
-        "https://*.app.github.dev/*"
+        "https://*.app.github.dev/*",
+        "https://*/*",
+        "http://*/*"
       ],
       "js": [
         "bridge.js"

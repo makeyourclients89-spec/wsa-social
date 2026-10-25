@@ -260,9 +260,13 @@
     return null;
   }
 
-  // Insert content into modern Lexical / Draft.js editors with full newline and preview support
+  // Insert content into modern Lexical / Draft.js editors with human typing/editing simulation
   async function insertTextIntoEditor(editor, text) {
-    // 1. Also copy to real OS clipboard for safety backup
+    // 1. Natural pause before typing/pasting (1.2 to 2.5 seconds)
+    const initialPause = Math.floor(Math.random() * (2500 - 1200 + 1)) + 1200;
+    await sleep(initialPause);
+
+    // 2. Also copy to real OS clipboard for safety backup
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
@@ -271,13 +275,13 @@
       console.warn('Clipboard write fallback ignored:', e);
     }
 
-    // 2. Focus and activate editor
+    // 3. Focus and activate editor
     editor.focus();
-    await sleep(200);
+    await sleep(300);
     editor.click();
-    await sleep(200);
+    await sleep(300);
 
-    // 3. Clear any existing selection
+    // 4. Clear any existing selection
     try {
       const sel = window.getSelection();
       const range = document.createRange();
@@ -286,8 +290,7 @@
       sel.addRange(range);
     } catch (e) {}
 
-    // 4. Primary Method: Native-like ClipboardEvent paste with DataTransfer
-    // (This triggers Lexical's PASTE_COMMAND, parses newlines, and fetches Reel link preview)
+    // 5. Primary Method: Native-like ClipboardEvent paste with DataTransfer
     let pastedSuccess = false;
     try {
       const dt = new DataTransfer();
@@ -298,7 +301,7 @@
         clipboardData: dt
       });
       editor.dispatchEvent(pasteEvent);
-      await sleep(500);
+      await sleep(800);
 
       const curVal = (editor.innerText || editor.textContent || '').trim();
       if (curVal.length > 5) {
@@ -309,9 +312,9 @@
       console.warn('ClipboardEvent paste attempt error:', err);
     }
 
-    // 5. Fallback Method: Line-by-line insertion preserving paragraphs for Reel URL detection
+    // 6. Fallback Method: Line-by-line insertion preserving paragraphs
     if (!pastedSuccess) {
-      console.log('⚠️ Using line-by-line execCommand fallback...');
+      console.log('⚠️ Using line-by-line execCommand fallback with variable human cadence...');
       editor.focus();
       const lines = text.split('\n');
       for (let idx = 0; idx < lines.length; idx++) {
@@ -325,35 +328,47 @@
           try {
             document.execCommand('insertParagraph', false);
           } catch (e) {}
-          await sleep(50);
+          await sleep(Math.floor(Math.random() * 120) + 60);
         }
       }
     }
 
-    // 6. Dispatch input & change events so React / Lexical updates its internal state
-    editor.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: ' ' }));
+    // 7. Human Edit Simulation ("caption edit kar ke dekho isse facebook real lage"):
+    // Add space, wait, backspace, and trigger real input events to fool Facebook bot detection
+    try {
+      await sleep(400);
+      editor.focus();
+
+      // Dispatch real keydown for space
+      editor.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }));
+      document.execCommand('insertText', false, ' ');
+      editor.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: ' ' }));
+
+      // Natural pause between edit keystrokes (300 to 600ms)
+      await sleep(Math.floor(Math.random() * 300) + 300);
+
+      // Backspace the space to leave clean text
+      editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', code: 'Backspace', bubbles: true }));
+      document.execCommand('delete', false);
+      editor.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'deleteContentBackward' }));
+
+      console.log('✅ WSA: Simulated human keystroke edit cycle in editor.');
+    } catch (e) {
+      console.warn('Human edit simulation fallback ignored:', e);
+    }
+
+    // 8. Dispatch input & change events so React / Lexical marks form as dirty & ready to submit
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     editor.dispatchEvent(new Event('change', { bubbles: true }));
-
-    // 7. Flush state, trigger link preview parser, and cycle blur/focus
-    try {
-      editor.focus();
-      document.execCommand('insertText', false, ' ');
-      await sleep(100);
-      document.execCommand('delete', false);
-      await sleep(100);
-      editor.blur();
-      await sleep(250);
-    } catch (e) {}
 
     return true;
   }
 
-  // Find Facebook Post Button (waits for preview to load and button to be active, with auto-force-enable fallback)
+  // Find Facebook Post Button (waits for preview to load, checks blue buttons, with auto-force-enable fallback)
   async function findPostButton(dialog) {
     const dialogScope = dialog || document.querySelector('div[role="dialog"]');
 
-    for (let attempts = 0; attempts < 25; attempts++) {
+    for (let attempts = 0; attempts < 30; attempts++) {
       const candidateButtons = Array.from(
         dialogScope
           ? dialogScope.querySelectorAll('div[role="button"], button')
@@ -366,8 +381,15 @@
         const ariaLabel = (b.getAttribute('aria-label') || '').trim().toLowerCase();
         const text = (b.innerText || '').trim().toLowerCase();
 
-        // Skip close or attachment icon buttons
-        if (ariaLabel.includes('close') || ariaLabel.includes('photo') || ariaLabel.includes('tag') || ariaLabel.includes('feeling')) {
+        // Skip close, attachment, or emoji icon buttons
+        if (
+          ariaLabel.includes('close') ||
+          ariaLabel.includes('photo') ||
+          ariaLabel.includes('video') ||
+          ariaLabel.includes('tag') ||
+          ariaLabel.includes('feeling') ||
+          ariaLabel.includes('location')
+        ) {
           continue;
         }
 
@@ -378,7 +400,9 @@
           text === 'post' ||
           text === 'publish' ||
           text.includes('post to') ||
-          text.includes('submit')
+          text === 'submit' ||
+          text.includes('submit') ||
+          b.getAttribute('type') === 'submit'
         );
 
         if (isPostCandidate) {
@@ -396,9 +420,27 @@
         }
       }
 
-      // If the Post button is found but stays disabled (e.g., Reel preview taking too long or state desync),
-      // after 10 attempts (~6 seconds) force-enable it so the post publishes!
-      if (detectedPostBtn && attempts >= 10) {
+      // If no explicit candidate by text, check for the primary colored submit button in the dialog footer
+      if (!detectedPostBtn && dialogScope) {
+        const footerButtons = Array.from(dialogScope.querySelectorAll('div[role="button"][tabindex="0"]'));
+        for (const fb of footerButtons) {
+          const compStyle = window.getComputedStyle(fb);
+          const bg = compStyle.backgroundColor || '';
+          // Check if button background is Facebook blue (rgb(8, 102, 255) / rgb(24, 119, 242) / etc.)
+          if (bg.includes('8, 102, 255') || bg.includes('24, 119, 242') || bg.includes('33, 111, 219')) {
+            detectedPostBtn = fb;
+            const ariaDisabled = fb.getAttribute('aria-disabled');
+            if (ariaDisabled !== 'true' && !fb.hasAttribute('disabled')) {
+              console.log('✅ WSA: Active Facebook Blue Post button found in dialog!', fb);
+              return fb;
+            }
+          }
+        }
+      }
+
+      // If the Post button is found but stays disabled (e.g., Reel preview taking time or React state desync),
+      // after 12 attempts (~8 seconds) force-enable it so the post publishes cleanly!
+      if (detectedPostBtn && attempts >= 12) {
         console.log('⚡ WSA: Force-enabling Post button to complete publication...', detectedPostBtn);
         detectedPostBtn.removeAttribute('disabled');
         detectedPostBtn.setAttribute('aria-disabled', 'false');
@@ -407,7 +449,7 @@
         return detectedPostBtn;
       }
 
-      await sleep(600);
+      await sleep(700);
     }
 
     return null;
@@ -694,8 +736,27 @@
     const fullText = task.full_content || (task.caption ? `${task.caption}\n\n${task.post_url}` : task.post_url);
     await insertTextIntoEditor(editor, fullText);
 
-    updateHud('⏳ Waiting for Facebook Reel preview & Post button activation...');
-    await sleep(3500);
+    // Randomized human-like waiting duration: STRICTLY NEVER LESS THAN 15 SECONDS!
+    // Ranges from 18 seconds up to 48 seconds dynamically for organic variation
+    const dynamicWaitSeconds = Math.floor(Math.random() * (48 - 18 + 1)) + 18;
+    console.log(`⏱️ WSA Human Cadence: Waiting ${dynamicWaitSeconds}s before Post button click.`);
+
+    for (let secLeft = dynamicWaitSeconds; secLeft > 0; secLeft--) {
+      updateHud(
+        `⏳ <b>Anti-Bot Timing:</b> Waiting ${secLeft}s before clicking Post...<br><span style="font-size:11px; color:#94a3b8;">Facebook Reel card loading • Human Cadence Active</span>`,
+        `${secLeft}s LEFT`,
+        '#3b82f6'
+      );
+
+      // Halfway simulation: simulate human reading / cursor focus check
+      if (secLeft === Math.floor(dynamicWaitSeconds / 2)) {
+        try {
+          if (editor) editor.focus();
+        } catch (e) {}
+      }
+
+      await sleep(1000);
+    }
 
     updateHud('6️⃣ Locating active "Post" button...');
     const postBtn = await findPostButton(dialog);

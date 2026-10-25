@@ -1,8 +1,7 @@
 /**
  * WSA Social Extension Popup Controller
+ * Version 1.1.0: Dynamic server URL auto-sync, client isolation, and realtime status.
  */
-
-const SERVER_URL = 'http://localhost/wsa-social/';
 
 document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('toggle-autopilot');
@@ -16,12 +15,70 @@ document.addEventListener('DOMContentLoaded', () => {
   const statPending = document.getElementById('stat-pending');
   const serverTime = document.getElementById('server-time');
   const logsContainer = document.getElementById('logs-container');
+  const labelServerUrl = document.getElementById('label-server-url');
+  const btnOpenDashboard = document.getElementById('btn-open-dashboard');
+  const btnEditServer = document.getElementById('btn-edit-server');
+  const boxEditServer = document.getElementById('box-edit-server');
+  const inputServerUrl = document.getElementById('input-server-url');
+  const btnSaveServer = document.getElementById('btn-save-server');
+  const btnCancelServer = document.getElementById('btn-cancel-server');
+
+  let activeServerUrl = 'http://localhost/wsa-social/';
+  let activeClientId = 2;
+
+  // Edit server controls
+  if (btnEditServer) {
+    btnEditServer.addEventListener('click', () => {
+      boxEditServer.style.display = boxEditServer.style.display === 'none' ? 'block' : 'none';
+      inputServerUrl.value = activeServerUrl;
+    });
+  }
+
+  if (btnCancelServer) {
+    btnCancelServer.addEventListener('click', () => {
+      boxEditServer.style.display = 'none';
+    });
+  }
+
+  if (btnSaveServer) {
+    btnSaveServer.addEventListener('click', () => {
+      let val = (inputServerUrl.value || '').trim();
+      if (!val) return;
+      if (!val.endsWith('/')) val += '/';
+      chrome.runtime.sendMessage({ action: 'UPDATE_SERVER_URL', server_url: val }, (res) => {
+        boxEditServer.style.display = 'none';
+        refreshData();
+      });
+    });
+  }
 
   // Load state and server stats
   async function refreshData() {
     // 1. Get background state
-    chrome.runtime.sendMessage({ action: 'GET_STATE' }, (state) => {
+    chrome.runtime.sendMessage({ action: 'GET_STATE' }, async (state) => {
       if (!state) return;
+
+      if (state.server_url) {
+        activeServerUrl = state.server_url;
+      }
+      if (state.active_client_id) {
+        activeClientId = state.active_client_id;
+      }
+
+      // Update server URL label and dashboard button
+      if (labelServerUrl) {
+        try {
+          const u = new URL(activeServerUrl);
+          labelServerUrl.innerText = u.host;
+          labelServerUrl.title = activeServerUrl;
+        } catch (e) {
+          labelServerUrl.innerText = activeServerUrl;
+        }
+      }
+
+      if (btnOpenDashboard) {
+        btnOpenDashboard.href = `${activeServerUrl.replace(/\/$/, '')}/index.php?page=groups&tab=queue`;
+      }
 
       toggle.checked = state.autopilot_enabled;
       if (state.autopilot_enabled) {
@@ -39,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         taskBox.className = 'task-card idle';
         taskTitle.innerText = 'Idle / Waiting for Next Due Task';
-        taskDesc.innerText = 'Auto-Pilot runs queued items automatically every 2 minutes.';
+        taskDesc.innerText = 'Auto-Pilot runs queued items automatically using human anti-bot cadence.';
       }
 
       // Render logs
@@ -48,24 +105,25 @@ document.addEventListener('DOMContentLoaded', () => {
           .map((log) => `<div class="log-item">${escapeHtml(log)}</div>`)
           .join('');
       }
-    });
 
-    // 2. Fetch server stats
-    try {
-      const res = await fetch(`${SERVER_URL}index.php?page=api-group-queue-status`, { cache: 'no-cache' });
-      const data = await res.json();
-      if (data.success) {
-        statQueued.innerText = data.queued_count ?? 0;
-        statShared.innerText = data.today_shared_count ?? data.shared_count ?? 0;
-        statPending.innerText = data.pending_count ?? 0;
-        if (data.server_time) {
-          const t = data.server_time.split(' ')[1] || data.server_time;
-          serverTime.innerText = `IST ${t}`;
+      // 2. Fetch server stats from the ACTIVE connected URL
+      try {
+        const statsUrl = `${activeServerUrl.replace(/\/$/, '')}/index.php?page=api-group-queue-status&client_id=${activeClientId}`;
+        const res = await fetch(statsUrl, { cache: 'no-cache' });
+        const data = await res.json();
+        if (data.success) {
+          statQueued.innerText = data.queued_count ?? 0;
+          statShared.innerText = data.today_shared_count ?? data.shared_count ?? 0;
+          statPending.innerText = data.pending_count ?? 0;
+          if (data.server_time) {
+            const t = data.server_time.split(' ')[1] || data.server_time;
+            serverTime.innerText = `IST ${t}`;
+          }
         }
+      } catch (err) {
+        console.warn('Could not contact active WSA server at', activeServerUrl, err);
       }
-    } catch (err) {
-      console.warn('Could not contact WSA Social local server:', err);
-    }
+    });
   }
 
   // Toggle Auto-Pilot
@@ -81,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRunNow.innerText = '⏳ Starting Next Share...';
     btnRunNow.style.opacity = '0.7';
 
-    chrome.runtime.sendMessage({ action: 'TRIGGER_NOW' }, (res) => {
+    chrome.runtime.sendMessage({ action: 'TRIGGER_NOW', client_id: activeClientId, server_url: activeServerUrl }, (res) => {
       setTimeout(() => {
         btnRunNow.disabled = false;
         btnRunNow.innerText = '⚡ Run Next Share Now (Zero-Click)';
@@ -98,5 +156,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial load & interval refresh
   refreshData();
   const timer = setInterval(refreshData, 3000);
-  window.addEventListener('unload', () => clearInterval(timer));
 });

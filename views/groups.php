@@ -728,6 +728,9 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
         <?php endif; ?>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" id="btn-ext-run-panel" class="smallbtn" onclick="triggerExtensionShareFromPanel()" style="background:#2563eb; color:#fff; font-weight:700; border:none; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Directly instructs the Chrome Extension to run the next item from this panel">
+          <span>🚀 Extension Auto-Share Now</span>
+        </button>
         <form method="post" action="index.php?page=group-queue-process-due" style="margin:0;">
           <?= csrf_field() ?>
           <button type="submit" class="smallbtn" style="background:#10b981; color:#fff; font-weight:700; border:none; padding:6px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Run due scheduled items immediately">
@@ -812,8 +815,11 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
                   <?php endif; ?>
                 </td>
                 <td style="text-align:right; white-space:nowrap;">
-                  <button type="button" class="btn" style="background:#1877f2; color:#fff; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" onclick="openGroupAndShareManual(<?= (int)$q['id'] ?>, '<?= h(addslashes($q['group_url'])) ?>', '<?= h(addslashes($q['post_url'])) ?>', '<?= h(addslashes($senderName)) ?>', '<?= h(addslashes($q['group_name'] ?? 'Group')) ?>')">
-                    <span>🚀 Share (Manual)</span>
+                  <button type="button" class="btn" style="background:#2563eb; color:#fff; font-size:11px; font-weight:700; padding:6px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" onclick="triggerExtensionShareFromPanel(<?= (int)$q['id'] ?>)" title="Extension ko instruction dein ki yeh post turant background me share kare">
+                    <span>⚡ Auto Share</span>
+                  </button>
+                  <button type="button" class="btn" style="background:#475569; color:#fff; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; margin-left:4px; display:inline-flex; align-items:center; gap:4px;" onclick="openGroupAndShareManual(<?= (int)$q['id'] ?>, '<?= h(addslashes($q['group_url'])) ?>', '<?= h(addslashes($q['post_url'])) ?>', '<?= h(addslashes($senderName)) ?>', '<?= h(addslashes($q['group_name'] ?? 'Group')) ?>')">
+                    <span>Manual</span>
                   </button>
                   <button type="button" class="btn" style="background:#10b981; color:#fff; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; margin-left:4px; display:inline-flex; align-items:center; gap:4px;" onclick="openRecordShareModal(<?= (int)$q['id'] ?>, '<?= h(addslashes($q['group_name'] ?? 'Group')) ?>', '<?= h(addslashes($q['group_url'])) ?>', '<?= h(addslashes($senderName)) ?>', '<?= h(addslashes($q['post_url'] ?? '')) ?>', 'shared')">
                     <span>✓ Done</span>
@@ -1721,13 +1727,46 @@ function toggleDismissExtensionModalToday(checked) {
   }
 }
 
+// Direct instruction to Chrome Extension from Panel
+function triggerExtensionShareFromPanel(itemId = null) {
+  const isInstalled = document.documentElement.getAttribute('data-wsa-extension-installed') === '1';
+  if (!isInstalled) {
+    document.getElementById('modal-extension-setup')?.showModal();
+    return;
+  }
+
+  const btn = document.getElementById('btn-ext-run-panel');
+  if (btn) {
+    btn.innerHTML = '<span>⏳ Starting Auto-Pilot...</span>';
+    btn.style.opacity = '0.75';
+  }
+
+  window.dispatchEvent(new CustomEvent('wsa-trigger-share-now', {
+    detail: {
+      client_id: <?= (int)$activeClientId ?>,
+      item_id: itemId
+    }
+  }));
+
+  setTimeout(() => {
+    if (btn) {
+      btn.innerHTML = '<span>🚀 Extension Auto-Share Now</span>';
+      btn.style.opacity = '1';
+    }
+  }, 3500);
+}
+
 // Listen for extension ready & pong events
 window.addEventListener('wsa-extension-ready', (e) => {
-  const ver = e.detail?.version || '1.0.0';
+  const ver = e.detail?.version || '1.1.0';
   updateExtensionStatusUI(true, ver);
 });
 window.addEventListener('wsa-pong-extension', (e) => {
-  const ver = e.detail?.version || '1.0.0';
+  const ver = e.detail?.version || '1.1.0';
+  updateExtensionStatusUI(true, ver);
+});
+window.addEventListener('wsa-extension-synced', (e) => {
+  const ver = e.detail?.version || '1.1.0';
   updateExtensionStatusUI(true, ver);
 });
 
