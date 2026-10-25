@@ -1639,7 +1639,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
 <script>
 // WSA Extension Realtime Detection Engine
-const LATEST_EXT_VERSION = '1.2.4';
+const LATEST_EXT_VERSION = '1.2.5';
 let isWsaExtensionActive = false;
 
 function compareVersions(v1, v2) {

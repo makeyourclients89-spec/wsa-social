@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WSA Social - Auto Facebook Group Share",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Zero-Click Automatic Sharing with Active Reel Preview Detection, Diagnostics & Viral Hashtags.",
   "icons": {
     "16": "icon16.png",

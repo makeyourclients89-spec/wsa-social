@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const extVersion = '1.2.4';
+  const extVersion = '1.2.5';
 
   function isWsaDashboard() {
     return !!(

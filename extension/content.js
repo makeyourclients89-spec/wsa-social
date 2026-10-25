@@ -94,7 +94,7 @@
         await executeGroupShare(task);
       } catch (err) {
         console.error('WSA Auto-Pilot Execution Error:', err);
-        updateHud(`❌ Error: ${err.message}`, 'FAILED', '#ef4444');
+        updateHud(`⚠️ <b>Execution Paused:</b> ${err.message}<br><small style="color:#cbd5e1;">Tab band nahi kiya gaya hai taaki aap manually check kar sakein.</small>`, 'PAUSED', '#ef4444');
         chrome.runtime.sendMessage({
           action: 'TASK_COMPLETED',
           result: {
@@ -646,8 +646,8 @@
     let outcomeStatus = 'shared';
     let permalink = null;
 
-    // 1. Wait for modal dialog to submit & close (up to 8 seconds)
-    for (let wait = 0; wait < 16; wait++) {
+    // 1. Wait for modal dialog to submit & close (up to 12 seconds)
+    for (let wait = 0; wait < 24; wait++) {
       const activeDialog = document.querySelector('div[role="dialog"]');
       if (!activeDialog) break;
 
@@ -666,15 +666,19 @@
       await sleep(500);
     }
 
+    if (document.querySelector('div[role="dialog"]')) {
+      console.warn('⚠️ WSA: Modal dialog did not close.');
+      return { status: 'dialog_still_open' };
+    }
+
     // 2. If preApprovalRequired was already declared in the composer modal, it's 100% Pending Approval!
     if (preApprovalRequired) {
       console.log('🟡 WSA: Group composer confirmed post approval is required.');
-      updateHud('🟡 Share Recorded! Pending Admin Approval. Tab closing in 4s...', 'APPROVAL', '#eab308');
       return { status: 'pending_approval', postUrl: null };
     }
 
-    // 3. Monitor page for toasts, banners, and pending post widgets
-    for (let i = 0; i < 18; i++) {
+    // 3. Monitor page for toasts, banners, and pending post widgets (up to 12 seconds)
+    for (let i = 0; i < 24; i++) {
       const fullPageText = (document.body.innerText || '').toLowerCase();
 
       const approvalPhrases = [
@@ -705,15 +709,14 @@
 
       if (hasPendingPhrase || hasPendingLink || urlIsPending) {
         console.log('🟡 WSA: Admin Approval notice detected!');
-        updateHud('🟡 Share Recorded! Pending Admin Approval. Tab closing in 4s...', 'APPROVAL', '#eab308');
         return { status: 'pending_approval', postUrl: null };
       }
 
       // 4. Look for a BRAND NEW post permalink (NOT present before posting)
-      const currentLinks = Array.from(document.querySelectorAll('a[href*="/posts/"], a[href*="/permalink/"]'));
+      const currentLinks = Array.from(document.querySelectorAll('a[href*="/posts/"], a[href*="/permalink/"], a[href*="/reel/"]'));
       for (const a of currentLinks) {
         const href = a.href || '';
-        if (href.includes('/groups/') && (href.includes('/posts/') || href.includes('/permalink/'))) {
+        if (href.includes('/groups/') && (href.includes('/posts/') || href.includes('/permalink/') || href.includes('/reel/'))) {
           // Reject comments, users, and photos
           if (!href.includes('/user/') && !href.includes('/comment/') && !href.includes('comment_id')) {
             const clean = href.split('?')[0];
@@ -728,7 +731,6 @@
       }
 
       if (permalink) {
-        updateHud('✅ Live Post Permalink Verified! Tab closing in 4s...', 'SUCCESS', '#10b981');
         return { status: 'shared', postUrl: permalink };
       }
 
@@ -736,8 +738,151 @@
     }
 
     // Default if dialog closed cleanly, no approval notice, and no new link extracted yet
-    updateHud('✅ Successfully Shared to Group Feed! Tab closing in 4s...', 'SUCCESS', '#10b981');
     return { status: 'shared', postUrl: null };
+  }
+
+  // Interactive Manual Post Assist Mode: Kept open on Post button issue or disabled state
+  function handleManualPostAssist(task, existingPostUrls, preApprovalRequired, diagReason) {
+    return new Promise((resolve) => {
+      let isFinalized = false;
+
+      const renderAssistHud = (customNote = '') => {
+        const hudContent = `
+          <div style="font-weight:700; color:#f59e0b; font-size:13px; display:flex; align-items:center; gap:6px;">
+            <span>⚠️ Auto-Click Paused — Tab Khula Hai</span>
+          </div>
+          <div style="font-size:12px; color:#f1f5f9; line-height:1.4; margin:6px 0;">
+            Caption & Link modal me taiyar hai. Kripya Facebook modal me <b>Post / प्रकाशित करें</b> button dabayein.<br>
+            <span style="color:#94a3b8; font-size:11px;">
+              ${customNote || 'Aapke click karte hi extension Live link ya Pending status save karegi.'}
+            </span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <button id="wsa-btn-manual-verify" style="flex:1; background:#10b981; color:#fff; border:none; padding:7px 10px; border-radius:6px; font-weight:700; font-size:11.5px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
+              ✓ Maine Post Kar Diya
+            </button>
+            <button id="wsa-btn-manual-skip" style="background:#475569; color:#f1f5f9; border:none; padding:7px 9px; border-radius:6px; font-weight:600; font-size:11px; cursor:pointer;">
+              Skip Task
+            </button>
+          </div>
+        `;
+        updateHud(hudContent, 'MANUAL ASSIST', '#f59e0b');
+        attachHudListeners();
+      };
+
+      const cleanup = () => {
+        document.removeEventListener('click', onGlobalClick, true);
+        if (pollTimer) clearInterval(pollTimer);
+      };
+
+      const triggerOutcomeDetection = async (source) => {
+        if (isFinalized) return;
+        console.log(`🔍 WSA: Checking outcome triggered by [${source}]...`);
+        updateHud('🔄 <b>Post Check Active:</b> Submitting & detecting link / approval status...', 'CHECKING', '#3b82f6');
+
+        try {
+          const outcome = await detectOutcomeAndPermalink(task, existingPostUrls, preApprovalRequired);
+
+          if (outcome.status === 'dialog_still_open') {
+            console.warn('⚠️ WSA: Dialog still open after click check.');
+            renderAssistHud('Modal abhi bhi khula hua hai. Kripya pehle Facebook modal me "Post" dabayein!');
+            return;
+          }
+
+          // Successfully completed either Live or Pending Approval!
+          isFinalized = true;
+          cleanup();
+
+          if (outcome.status === 'pending_approval') {
+            updateHud('🟡 <b>Pending Admin Approval Recorded!</b><br>Database me pending status update ho gaya. Tab closing in 4s...', 'PENDING', '#eab308');
+          } else {
+            const linkHtml = outcome.postUrl
+              ? `<br><a href="${outcome.postUrl}" target="_blank" style="color:#93c5fd; text-decoration:underline; font-size:11.5px; word-break:break-all;">${outcome.postUrl}</a>`
+              : '';
+            updateHud(`✅ <b>Post Live Recorded!</b>${linkHtml}<br>Database me live status update ho gaya. Tab closing in 4s...`, 'LIVE POST', '#10b981');
+          }
+
+          chrome.runtime.sendMessage({
+            action: 'TASK_COMPLETED',
+            result: {
+              queue_id: task.id,
+              status: outcome.status,
+              shared_post_url: outcome.postUrl,
+              error_message: null
+            }
+          });
+
+          resolve(outcome);
+        } catch (err) {
+          console.error('WSA Outcome detection error:', err);
+          renderAssistHud(`Error: ${err.message}`);
+        }
+      };
+
+      const attachHudListeners = () => {
+        const verifyBtn = document.getElementById('wsa-btn-manual-verify');
+        if (verifyBtn) {
+          verifyBtn.onclick = (e) => {
+            e.stopPropagation();
+            triggerOutcomeDetection('verify_button');
+          };
+        }
+        const skipBtn = document.getElementById('wsa-btn-manual-skip');
+        if (skipBtn) {
+          skipBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (isFinalized) return;
+            isFinalized = true;
+            cleanup();
+            updateHud('❌ Task skipped by user. Tab band nahi kiya gaya hai.', 'SKIPPED', '#64748b');
+            chrome.runtime.sendMessage({
+              action: 'TASK_COMPLETED',
+              result: {
+                queue_id: task.id,
+                status: 'failed',
+                shared_post_url: task.group_url,
+                error_message: `Skipped by user [${diagReason || 'Post button locked'}]`
+              }
+            });
+            resolve({ status: 'failed' });
+          };
+        }
+      };
+
+      const onGlobalClick = (e) => {
+        if (isFinalized) return;
+        const target = e.target;
+        if (!target) return;
+
+        // If clicked inside Facebook's dialog (e.g. user clicking Post or anything in dialog)
+        if (target.closest('div[role="dialog"]')) {
+          console.log('👆 WSA: Detected user click inside Facebook dialog. Will verify after 1.5s...');
+          setTimeout(() => {
+            if (!isFinalized) triggerOutcomeDetection('dialog_click');
+          }, 1500);
+        }
+      };
+
+      document.addEventListener('click', onGlobalClick, true);
+
+      // Also watch if dialog closes automatically in background
+      const pollTimer = setInterval(() => {
+        if (isFinalized) {
+          clearInterval(pollTimer);
+          return;
+        }
+        const activeDlg = document.querySelector('div[role="dialog"]');
+        if (!activeDlg) {
+          // Dialog was closed!
+          console.log('🚪 WSA: Post dialog closed. Triggering outcome detection...');
+          clearInterval(pollTimer);
+          triggerOutcomeDetection('dialog_closed');
+        }
+      }, 1200);
+
+      // Render initial HUD
+      renderAssistHud();
+    });
   }
 
   // Profile / Sender Page Switcher: Ensure sharing happens as task.sender_name
@@ -980,16 +1125,12 @@
     }
 
     updateHud('6️⃣ Locating active "Post" button...');
-    const postBtn = await findPostButton(dialog);
-    if (!postBtn) {
-      const diagReason = diagnosePostButtonFailure(dialog);
-      console.error('❌ WSA Post Button Diagnostic:', diagReason);
-      throw new Error(`Post button was not found or remained disabled. [Reason: ${diagReason}]`);
-    }
+    const currentDialog = document.querySelector('div[role="dialog"]') || dialog;
+    const postBtn = await findPostButton(currentDialog);
 
     // Snapshot existing posts & check pre-approval before clicking
-    const modalTextBefore = (dialog.innerText || '').toLowerCase();
-    const btnLabelBefore = (postBtn.innerText || postBtn.getAttribute('aria-label') || '').toLowerCase();
+    const modalTextBefore = (currentDialog ? currentDialog.innerText : '').toLowerCase();
+    const btnLabelBefore = (postBtn ? (postBtn.innerText || postBtn.getAttribute('aria-label') || '') : '').toLowerCase();
     const preApprovalRequired = (
       modalTextBefore.includes('require admin approval') ||
       modalTextBefore.includes('requires admin approval') ||
@@ -1002,23 +1143,44 @@
     );
 
     const existingPostUrls = new Set();
-    document.querySelectorAll('a[href*="/posts/"], a[href*="/permalink/"]').forEach(a => {
+    document.querySelectorAll('a[href*="/posts/"], a[href*="/permalink/"], a[href*="/reel/"]').forEach(a => {
       const clean = (a.href || '').split('?')[0];
       if (clean) existingPostUrls.add(clean);
     });
 
-    updateHud('🚀 Auto-Clicking Post Button (Zero-Click!)...');
-    postBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await sleep(500);
-    try {
-      postBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window }));
-    } catch (e) {}
-    postBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
-    try {
-      postBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window }));
-    } catch (e) {}
-    postBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-    postBtn.click();
+    let autoClickedAndClosed = false;
+    if (postBtn) {
+      updateHud('🚀 Auto-Clicking Post Button (Zero-Click!)...');
+      postBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await sleep(500);
+      try {
+        postBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window }));
+      } catch (e) {}
+      postBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      try {
+        postBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window }));
+      } catch (e) {}
+      postBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+      postBtn.click();
+
+      // Check if dialog submits and closes within 6 seconds
+      for (let w = 0; w < 12; w++) {
+        await sleep(500);
+        if (!document.querySelector('div[role="dialog"]')) {
+          autoClickedAndClosed = true;
+          break;
+        }
+      }
+    }
+
+    if (!autoClickedAndClosed) {
+      // Auto-click did not close the modal or postBtn wasn't available
+      // DO NOT close tab! Enter Manual Post Assist mode to let user click and extension detect outcome
+      const diagReason = diagnosePostButtonFailure(currentDialog);
+      console.warn('⚠️ WSA: Auto-click could not submit dialog. Entering Manual Assist. Reason:', diagReason);
+      await handleManualPostAssist(task, existingPostUrls, preApprovalRequired, diagReason);
+      return;
+    }
 
     updateHud('7️⃣ Detecting publication & capturing permalink...');
     const outcome = await detectOutcomeAndPermalink(task, existingPostUrls, preApprovalRequired);
@@ -1026,7 +1188,10 @@
     if (outcome.status === 'pending_approval') {
       updateHud(`🟡 Share Recorded! Pending Admin Approval. Tab closing in 4s...`, 'PENDING', '#eab308');
     } else {
-      updateHud(`✅ Successfully Shared Live! Tab closing in 4s...`, 'SUCCESS', '#10b981');
+      const linkMsg = outcome.postUrl
+        ? `<br><a href="${outcome.postUrl}" target="_blank" style="color:#93c5fd; text-decoration:underline; font-size:11.5px; word-break:break-all;">${outcome.postUrl}</a>`
+        : '';
+      updateHud(`✅ Successfully Shared Live!${linkMsg}<br>Tab closing in 4s...`, 'SUCCESS', '#10b981');
     }
 
     // Report back to background service worker

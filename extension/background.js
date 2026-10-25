@@ -168,11 +168,15 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
       chrome.storage.local.remove('active_task');
       isProcessing = false;
 
-      // Close the tab after 4 seconds so user can see completion
-      if (sender.tab && sender.tab.id) {
+      // Close the tab ONLY if status is 'shared' or 'pending_approval'
+      // If status is 'failed', KEEP tab open so user can inspect or complete manually!
+      if ((result.status === 'shared' || result.status === 'pending_approval') && sender.tab && sender.tab.id) {
+        logEvent(`Closing tab #${sender.tab.id} in 4 seconds after successful record.`);
         setTimeout(() => {
           chrome.tabs.remove(sender.tab.id).catch(() => {});
         }, 4000);
+      } else {
+        logEvent(`Tab #${sender?.tab?.id} kept open (task status is "${result.status}").`);
       }
       currentTabId = null;
     });
