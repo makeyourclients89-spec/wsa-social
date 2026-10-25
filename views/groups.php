@@ -694,11 +694,11 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
       </div>
     </div>
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" class="btn" style="background:#10b981; color:#fff; font-weight:800; font-size:12.5px; padding:9px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.35);">
-        <span>⚡ 1-Click Auto-Installer (.bat)</span>
+      <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:12.5px; padding:9px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,0.35);">
+        <span>⬇️ Download Extension Package (.zip)</span>
       </a>
-      <button type="button" class="btn btn-primary" onclick="document.getElementById('modal-extension-setup').showModal()" style="background:#3b82f6; color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:8px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-        <span>🚀 Setup Guide / Status</span>
+      <button type="button" class="btn" onclick="openExtensionSetupModal(true)" style="background:#334155; color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:8px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+        <span>📖 Setup & Update Guide</span>
       </button>
     </div>
   </div>
@@ -1570,12 +1570,12 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   </div>
 
   <!-- Real-time Live Status Banner -->
-  <div id="modal-ext-status-banner" style="display:flex; align-items:center; justify-content:space-between; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
+  <div id="modal-ext-status-banner" style="display:flex; align-items:center; justify-content:space-between; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
     <div style="display:flex; align-items:center; gap:10px;">
-      <span id="modal-ext-status-icon" style="font-size:20px;">⚠️</span>
+      <span id="modal-ext-status-icon" style="font-size:22px;">🛑</span>
       <div>
-        <div id="modal-ext-status-title" style="font-size:13px; font-weight:800; color:#c2410c;">Extension Abhi Browser Me Active Nahi Hai</div>
-        <div id="modal-ext-status-sub" style="font-size:11.5px; color:#9a3412;">Zero-Click background sharing ke liye niche diye 1-click steps follow karein.</div>
+        <div id="modal-ext-status-title" style="font-size:13.5px; font-weight:800; color:#b91c1c;">Extension Abhi Browser Me Active Nahi Hai</div>
+        <div id="modal-ext-status-sub" style="font-size:11.5px; color:#991b1b;">Zero-Click background sharing ke liye niche diye download button se ZIP package lein.</div>
       </div>
     </div>
     <button type="button" class="btn light" onclick="verifyExtensionConnection(true)" style="font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:6px; white-space:nowrap;">
@@ -1583,70 +1583,78 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </button>
   </div>
 
-  <!-- Option 1: 1-Click Windows Auto-Installer -->
-  <div style="background:rgba(16,185,129,0.08); border:1.5px solid #10b981; border-radius:12px; padding:16px; margin-bottom:16px;">
+  <!-- Primary Action: Direct ZIP Download (Manual Install) -->
+  <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:18px; margin-bottom:16px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-      <span style="font-size:12.5px; font-weight:800; color:#047857; text-transform:uppercase; letter-spacing:0.5px;">⭐ Sabse Asaan (Recommended)</span>
-      <span style="background:#10b981; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">1-CLICK</span>
+      <span style="font-size:12.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.1.0)</span>
+      <span style="background:#2563eb; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
     </div>
-    <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" class="btn" style="background:#10b981; color:#fff; font-weight:800; font-size:14.5px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(16,185,129,0.35); width:100%;">
-      <span style="font-size:18px;">⚡</span>
-      <span>Download 1-Click Windows Auto-Installer (.bat)</span>
+    <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:14.5px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%;">
+      <span style="font-size:18px;">⬇️</span>
+      <span>Download Extension Package (.zip)</span>
     </a>
-    <div style="font-size:12px; color:#065f46; margin-top:8px; line-height:1.4;">
-      👉 <b>Download karke bas 1 baar run (double-click) karein!</b><br>
-      Yeh automatically extension files extract karega, path copy karega aur Chrome Extensions open kar dega!
+    <div style="font-size:12px; color:#1e3a8a; margin-top:9px; line-height:1.45;">
+      👉 <b>Chrome Security Rule:</b> Chrome extensions ko automatically install nahi hone deta, isliye <b>ZIP download karke manual load karna zaroori hai</b> (niche sirf 3 aasan steps hain).
     </div>
     <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:6px;">
-      Backup link: <a href="index.php?page=download-extension-installer" style="color:#059669; font-weight:700;">Direct Server Download (.bat)</a>
+      Server direct link: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:700;">Download ZIP</a>
     </div>
   </div>
 
-  <!-- Option 2: Manual ZIP Download -->
-  <details style="margin-bottom:16px; background:var(--bg-subtle, #f8fafc); border:1px solid var(--line); border-radius:10px; padding:10px 14px;">
-    <summary style="cursor:pointer; font-weight:700; font-size:12.5px; color:var(--ink);">
-      📦 Ya manual ZIP download karna chahte hain? (Click to view)
-    </summary>
-    <div style="margin-top:12px;">
-      <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:700; font-size:13px; padding:10px 14px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-        <span>⬇️ Download wsa-social-extension.zip</span>
-      </a>
-      <span style="font-size:11.5px; color:var(--muted); margin-left:8px;">
-        (Backup: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:600;">Server Route</a>)
+  <div style="font-weight:800; font-size:13.5px; margin-bottom:10px; color:var(--ink); display:flex; align-items:center; gap:6px;">
+    <span>🛠️</span>
+    <span>Chrome me Manual Install / Update Karne Ke 3 Aasan Steps:</span>
+  </div>
+
+  <ol style="padding-left:22px; line-height:1.8; font-size:13px; color:var(--ink); margin-bottom:16px;">
+    <li>
+      Downloaded ZIP file (<code>wsa-social-extension.zip</code>) par right-click karke <b>"Extract All..."</b> (Unzip) karein.
+    </li>
+    <li>
+      Naye Chrome tab me open karein: <code style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="navigator.clipboard?.writeText('chrome://extensions')">chrome://extensions</code> aur top-right corner me <b>"Developer mode"</b> toggle switch ko <b>ON</b> karein.
+    </li>
+    <li>
+      Top-left corner me <b>"Load unpacked"</b> click karein aur extract kiya hua <code>extension</code> folder select karein!
+      <br>
+      <span style="font-size:12px; color:#059669; font-weight:700;">
+        🔄 <b>Agar purana version pehle se load hai:</b> To naya download karke extract karein aur Chrome me <code>chrome://extensions</code> par jakar WSA card me <b>Reload (🔄 circular arrow)</b> daba dein!
       </span>
-      <div style="font-size:12px; color:var(--muted); margin-top:8px;">
-        ZIP download karke unzip karein aur Chrome me <code>chrome://extensions</code> par jakar Developer mode ON karke <b>Load unpacked</b> se select karein.
-      </div>
+    </li>
+  </ol>
+
+  <!-- Optional Windows Helper Script -->
+  <details style="margin-bottom:16px; background:var(--bg-subtle, #f8fafc); border:1px solid var(--line); border-radius:10px; padding:10px 14px;">
+    <summary style="cursor:pointer; font-weight:700; font-size:12px; color:var(--muted);">
+      ⚡ Optional Windows Helper (.bat file) - agar manually unzip nahi karna chahte
+    </summary>
+    <div style="margin-top:10px; font-size:12px;">
+      <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" style="color:#059669; font-weight:700;">Install-WSA-Extension.bat download karein</a> - yeh script files ko auto-extract karke Chrome Extensions window open kar deti hai.
     </div>
   </details>
 
-  <div style="font-weight:800; font-size:13px; margin-bottom:10px; color:var(--ink);">
-    Chrome me Enable Karne Ke 3 Simple Steps (Sirf 1 Baar):
-  </div>
-
-  <ol style="padding-left:20px; line-height:1.7; font-size:13px; color:var(--ink); margin-bottom:18px;">
-    <li>Naye Chrome tab me open karein: <code style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="navigator.clipboard?.writeText('chrome://extensions')">chrome://extensions</code> <span style="font-size:11px; color:var(--muted);">(Address bar me paste karein)</span></li>
-    <li>Top right corner me <b>"Developer mode"</b> toggle switch ko <b>ON</b> karein.</li>
-    <li>Top left corner me <b>"Load unpacked"</b> click karein aur downloaded/unzipped <code>extension</code> folder select karein!</li>
-  </ol>
-
-  <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px; margin-bottom:18px; font-size:12px; color:#166534; display:flex; align-items:center; gap:8px;">
-    <span>⚡</span>
-    <div><b>Load hote hi kya hoga?</b> Extension queue se due items ko bina button dabaye Facebook groups me post karegi aur status Live record karegi!</div>
-  </div>
-
-  <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:12px;">
-    <label style="font-size:12px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:6px;">
-      <input type="checkbox" id="chk-dont-show-again-today" onchange="toggleDismissExtensionModalToday(this.checked)">
-      <span>Aaj ke liye auto-popup mat dikhana</span>
-    </label>
+  <div style="display:flex; justify-content:flex-end; align-items:center; border-top:1px solid var(--line); padding-top:12px;">
     <button type="button" class="btn light" onclick="document.getElementById('modal-extension-setup').close()">Close</button>
   </div>
 </dialog>
 
 <script>
 // WSA Extension Realtime Detection Engine
+const LATEST_EXT_VERSION = '1.1.0';
 let isWsaExtensionActive = false;
+
+function compareVersions(v1, v2) {
+  if (!v1) return -1;
+  if (!v2) return 1;
+  const p1 = String(v1).replace(/^v/i, '').split('.').map(Number);
+  const p2 = String(v2).replace(/^v/i, '').split('.').map(Number);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const n1 = p1[i] || 0;
+    const n2 = p2[i] || 0;
+    if (n1 > n2) return 1;
+    if (n1 < n2) return -1;
+  }
+  return 0;
+}
 
 function updateExtensionStatusUI(isActive, version) {
   isWsaExtensionActive = !!isActive;
@@ -1658,36 +1666,58 @@ function updateExtensionStatusUI(isActive, version) {
   const sub = document.getElementById('modal-ext-status-sub');
 
   if (isActive) {
-    if (dot) dot.style.background = '#10b981';
-    if (txt) txt.innerText = '🟢 WSA Extension Active ' + (version ? 'v' + version : '');
-    if (banner) {
-      banner.style.background = '#f0fdf4';
-      banner.style.borderColor = '#bbf7d0';
-    }
-    if (icon) icon.innerText = '✅';
-    if (title) {
-      title.innerText = 'WSA Chrome Extension Connected & Active!';
-      title.style.color = '#15803d';
-    }
-    if (sub) {
-      sub.innerText = 'Zero-Click Background Auto-Posting is ready and running.';
-      sub.style.color = '#166534';
+    const cmp = compareVersions(version, LATEST_EXT_VERSION);
+    if (cmp < 0) {
+      // OLD VERSION INSTALLED (Update Available)
+      if (dot) dot.style.background = '#f59e0b';
+      if (txt) txt.innerText = `🟠 Update Available (v${version} → v${LATEST_EXT_VERSION})`;
+      if (banner) {
+        banner.style.background = '#fffbeb';
+        banner.style.borderColor = '#fde68a';
+      }
+      if (icon) icon.innerText = '⚠️';
+      if (title) {
+        title.innerText = `Extension Update Available (v${version} → Latest v${LATEST_EXT_VERSION})`;
+        title.style.color = '#b45309';
+      }
+      if (sub) {
+        sub.innerText = 'Naye human-cadence (15-50s anti-bot delay) aur URL auto-sync ke liye latest version download karein ya Chrome me Reload icon dabayein!';
+        sub.style.color = '#92400e';
+      }
+    } else {
+      // LATEST VERSION ACTIVE
+      if (dot) dot.style.background = '#10b981';
+      if (txt) txt.innerText = `🟢 WSA Extension Active v${version}`;
+      if (banner) {
+        banner.style.background = '#f0fdf4';
+        banner.style.borderColor = '#bbf7d0';
+      }
+      if (icon) icon.innerText = '✅';
+      if (title) {
+        title.innerText = `WSA Chrome Extension Connected & Active (v${version})`;
+        title.style.color = '#15803d';
+      }
+      if (sub) {
+        sub.innerText = 'Zero-Click Background Auto-Posting is ready and running.';
+        sub.style.color = '#166534';
+      }
     }
   } else {
+    // NOT DETECTED
     if (dot) dot.style.background = '#ef4444';
     if (txt) txt.innerText = '🔴 Extension Not Detected';
     if (banner) {
-      banner.style.background = '#fff7ed';
-      banner.style.borderColor = '#fed7aa';
+      banner.style.background = '#fef2f2';
+      banner.style.borderColor = '#fecaca';
     }
-    if (icon) icon.innerText = '⚠️';
+    if (icon) icon.innerText = '🛑';
     if (title) {
       title.innerText = 'Extension Abhi Browser Me Active Nahi Hai';
-      title.style.color = '#c2410c';
+      title.style.color = '#b91c1c';
     }
     if (sub) {
-      sub.innerText = 'Zero-Click background sharing ke liye niche diye 1-click steps follow karein.';
-      sub.style.color = '#9a3412';
+      sub.innerText = 'Niche diye gaye download button se ZIP package lein aur manual load karein.';
+      sub.style.color = '#991b1b';
     }
   }
 }
@@ -1696,6 +1726,9 @@ function verifyExtensionConnection(forceModal) {
   if (document.documentElement.getAttribute('data-wsa-extension-installed') === '1') {
     const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
     updateExtensionStatusUI(true, ver);
+    if (forceModal && compareVersions(ver, LATEST_EXT_VERSION) < 0) {
+      document.getElementById('modal-extension-setup')?.showModal();
+    }
     return true;
   }
 
@@ -1704,27 +1737,21 @@ function verifyExtensionConnection(forceModal) {
     if (document.documentElement.getAttribute('data-wsa-extension-installed') === '1') {
       const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
       updateExtensionStatusUI(true, ver);
+      if (forceModal && compareVersions(ver, LATEST_EXT_VERSION) < 0) {
+        document.getElementById('modal-extension-setup')?.showModal();
+      }
     } else {
       updateExtensionStatusUI(false);
       if (forceModal) {
         document.getElementById('modal-extension-setup')?.showModal();
       }
     }
-  }, 350);
+  }, 400);
 }
 
 function openExtensionSetupModal(force) {
   verifyExtensionConnection(false);
   document.getElementById('modal-extension-setup')?.showModal();
-}
-
-function toggleDismissExtensionModalToday(checked) {
-  if (checked) {
-    const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem('wsa_dismiss_ext_prompt', today);
-  } else {
-    localStorage.removeItem('wsa_dismiss_ext_prompt');
-  }
 }
 
 // Direct instruction to Chrome Extension from Panel
@@ -1770,26 +1797,32 @@ window.addEventListener('wsa-extension-synced', (e) => {
   updateExtensionStatusUI(true, ver);
 });
 
-// Auto-check on page load
+// Auto-check on page load: POP MODAL IF NOT DETECTED OR OLD VERSION
 document.addEventListener('DOMContentLoaded', () => {
+  window.dispatchEvent(new CustomEvent('wsa-ping-extension'));
+
   setTimeout(() => {
     const isInstalled = document.documentElement.getAttribute('data-wsa-extension-installed') === '1';
+    const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
+    const modal = document.getElementById('modal-extension-setup');
+
     if (isInstalled) {
-      const ver = document.documentElement.getAttribute('data-wsa-extension-version') || '1.0.0';
       updateExtensionStatusUI(true, ver);
-    } else {
-      updateExtensionStatusUI(false);
-      // Auto-prompt modal if not dismissed today
-      const today = new Date().toISOString().slice(0, 10);
-      const dismissed = localStorage.getItem('wsa_dismiss_ext_prompt');
-      if (dismissed !== today) {
-        const modal = document.getElementById('modal-extension-setup');
+      const cmp = compareVersions(ver, LATEST_EXT_VERSION);
+      if (cmp < 0) {
+        // OLD VERSION: Prompt user to update extension!
         if (modal && !modal.open) {
           modal.showModal();
         }
       }
+    } else {
+      // EXTENSION NOT DETECTED: Prompt user to download & setup!
+      updateExtensionStatusUI(false);
+      if (modal && !modal.open) {
+        modal.showModal();
+      }
     }
-  }, 1000);
+  }, 800);
 });
 
 function copyExtensionFolder(btn) {
