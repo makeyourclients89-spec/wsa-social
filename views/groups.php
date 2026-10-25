@@ -1574,16 +1574,16 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </button>
   </div>
 
-  <!-- 1-Click Download or Local Path Box -->
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:16px;">
-    <a href="index.php?page=download-extension-zip" class="btn" style="background:#2563eb; color:#fff; font-weight:700; font-size:12.5px; padding:10px 14px; border-radius:8px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
-      <span>📦 Download Extension (.zip)</span>
+  <!-- Direct 1-Click Download Button -->
+  <div style="margin-bottom:18px;">
+    <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:14px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 12px rgba(37,99,235,0.3); width:100%;">
+      <span style="font-size:18px;">⬇️</span>
+      <span>Direct Download Extension Package (.zip)</span>
     </a>
-    <button type="button" id="btn-copy-ext-path" onclick="copyExtensionFolder(this)" class="btn light" style="font-weight:700; font-size:12px; padding:10px 14px; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <span>📋 Copy Extension Folder Path</span>
-    </button>
+    <div style="text-align:center; font-size:11.5px; color:var(--muted); margin-top:6px;">
+      💡 Backup link: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:700;">Direct Server Download</a>
+    </div>
   </div>
-  <input type="hidden" id="ext-folder-path" value="<?= h(realpath(ROOT_DIR . '/extension') ?: (ROOT_DIR . '/extension')) ?>">
 
   <div style="font-weight:800; font-size:13px; margin-bottom:10px; color:var(--ink);">
     Chrome me Enable Karne Ke 3 Simple Steps (Sirf 1 Baar):
