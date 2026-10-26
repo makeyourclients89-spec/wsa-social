@@ -1140,46 +1140,266 @@
     }
   }
 
-  // Main Auto-Like execution flow for a profile
+  // Generate relevant contextual comment tailored to post snippet / topic
+  function generateContextualComment(profileName, index, postSnippet) {
+    const snippetLower = (postSnippet || '').toLowerCase();
+
+    // Contextual pools based on detected content topic
+    if (snippetLower.includes('marketing') || snippetLower.includes('seo') || snippetLower.includes('agency')) {
+      const mktPool = [
+        "Crucial marketing insights! Organic reach and strategic consistency make all the difference 🎯",
+        "Great marketing strategy breakdown! Applying this approach right away 🚀",
+        "Data-backed marketing that actually drives authentic results. Top notch! 👏",
+        "Very valuable digital marketing advice! Thanks for sharing this breakdown 🙌",
+        "Super insightful! Scaling visibility organically is the most sustainable way ⭐",
+        "Brilliant perspective on marketing! Looking forward to more insights like this 🔥"
+      ];
+      return mktPool[index % mktPool.length];
+    }
+
+    if (snippetLower.includes('business') || snippetLower.includes('growth') || snippetLower.includes('sales') || snippetLower.includes('entrepreneur')) {
+      const bizPool = [
+        "Key takeaways for business growth and scaling! Great explanation 📈",
+        "Smart business strategy! Consistent execution is everything 💯",
+        "Practical business advice that actually works in the real market! Thanks for posting 💡",
+        "Solid insights for modern entrepreneurs and businesses looking to grow 🚀",
+        "Very relevant point for businesses looking to scale their reach effectively ⭐",
+        "Valuable breakdown! Actionable advice every business owner needs to hear 🙌"
+      ];
+      return bizPool[index % bizPool.length];
+    }
+
+    if (snippetLower.includes('reel') || snippetLower.includes('video') || snippetLower.includes('watch')) {
+      const videoPool = [
+        "Brilliant reel! Loved the way this was presented and explained 🔥",
+        "Great video! Spot on point and super engaging 👏",
+        "Amazing reel, saving this one for reference! 📌",
+        "Top quality content as always, very inspiring work ⭐",
+        "Love the energy and clear explanation in this reel! Keep it up 🙌",
+        "Really well put together reel, highly relevant! 💯"
+      ];
+      return videoPool[index % videoPool.length];
+    }
+
+    // High quality versatile authentic comments
+    const generalPool = [
+      "Really insightful content! Thanks for sharing this perspective 👍",
+      "Brilliant post, loved the way this was explained! 🔥",
+      "Spot on point! Highly relevant for anyone in this space 💯",
+      "Super helpful tips, appreciate the detailed breakdown! 👏",
+      "Top quality insights as always, keep up the great work! 🚀",
+      "Completely agree with this approach, works wonders! ⭐",
+      "Amazing breakdown, bookmarking this for reference! 📌",
+      "Great insights! This is exactly what was needed 🙌",
+      "Incredible value in this post, thanks for sharing! 💡",
+      "Very well presented and actionable insights! 🎯",
+      "Outstanding work, always love your updates! 👍",
+      "Solid advice as always, highly recommend this! 📈"
+    ];
+
+    return generalPool[index % generalPool.length];
+  }
+
+  // Find Comment Box / Editor on Post or Reel (supports both Reels drawer and Feed posts)
+  async function findCommentEditor() {
+    for (let attempt = 0; attempt < 18; attempt++) {
+      // 1. Check if comment input is already visible and active
+      let editors = Array.from(document.querySelectorAll('div[contenteditable="true"][role="textbox"], div[contenteditable="true"]'));
+      let commentEditor = editors.find(ed => {
+        const aria = (ed.getAttribute('aria-label') || '').toLowerCase();
+        const placeholder = (ed.getAttribute('data-placeholder') || '').toLowerCase();
+        return (
+          aria.includes('comment') ||
+          aria.includes('write a comment') ||
+          aria.includes('write a public comment') ||
+          aria.includes('टिप्पणी') ||
+          placeholder.includes('comment') ||
+          placeholder.includes('टिप्पणी')
+        );
+      });
+
+      if (commentEditor) return commentEditor;
+
+      // 2. On Facebook Reels: click the "Comment" icon in the right-side reel action bar to open comments
+      const allButtons = Array.from(document.querySelectorAll('div[role="button"], button'));
+      const commentTrigger = allButtons.find(b => {
+        const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+        const txt = (b.innerText || '').toLowerCase().trim();
+        return (
+          aria === 'comment' ||
+          aria === 'leave a comment' ||
+          aria === 'view comments' ||
+          aria.includes('comment') ||
+          aria.includes('टिप्पणी') ||
+          txt === 'comment' ||
+          txt === 'टिप्पणी'
+        );
+      });
+
+      if (commentTrigger) {
+        console.log('💬 WSA: Clicking comment trigger to expand comments panel...', commentTrigger);
+        commentTrigger.click();
+        await sleep(1500);
+      }
+
+      // Check again after clicking trigger
+      editors = Array.from(document.querySelectorAll('div[contenteditable="true"]'));
+      commentEditor = editors.find(ed => {
+        const aria = (ed.getAttribute('aria-label') || '').toLowerCase();
+        return aria.includes('comment') || aria.includes('write') || aria.includes('टिप्पणी');
+      });
+
+      if (commentEditor) return commentEditor;
+
+      await sleep(800);
+    }
+
+    // Fallback: Pick last contenteditable on page that isn't a post creator
+    const fallbackEditors = Array.from(document.querySelectorAll('div[contenteditable="true"]'));
+    return fallbackEditors.length > 0 ? fallbackEditors[fallbackEditors.length - 1] : null;
+  }
+
+  // Submit Facebook Comment via Enter key & Send button fallback
+  async function submitFacebookComment(editor) {
+    if (!editor) return false;
+    editor.focus();
+    await sleep(400);
+
+    // 1. Look for Send / Submit button near editor
+    const parentContainer = editor.closest('form') || editor.closest('div[role="presentation"]') || editor.parentElement?.parentElement;
+    if (parentContainer) {
+      const sendButtons = Array.from(parentContainer.querySelectorAll('div[role="button"], button'));
+      const sendBtn = sendButtons.find(b => {
+        const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+        return aria === 'comment' || aria === 'send' || aria.includes('submit') || aria.includes('post');
+      });
+      if (sendBtn) {
+        console.log('🚀 WSA: Clicking comment send button:', sendBtn);
+        sendBtn.click();
+        return true;
+      }
+    }
+
+    // 2. Dispatch Enter KeyboardEvent sequence
+    console.log('⌨️ WSA: Dispatching Enter key sequence to submit comment...');
+    editor.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    }));
+    editor.dispatchEvent(new KeyboardEvent('keypress', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    }));
+    editor.dispatchEvent(new KeyboardEvent('keyup', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    }));
+
+    return true;
+  }
+
+  // Main Auto-Like & Auto-Comment execution flow for a profile
   async function executeAutoLikeTask(task) {
     updateHud(`🔄 Checking author identity for "${task.profile_name}"...`, 'SWITCHING', '#3b82f6');
     await switchProfileIfNeeded({ sender_name: task.profile_name }, null);
     await sleep(1500);
 
-    // Pick random duration between 20 and 30 seconds
-    const totalDurationSeconds = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
-    console.log(`⏱️ WSA: Auto-Like session set to ${totalDurationSeconds}s with continuous human scroll`);
-
-    updateHud(`⏳ Initial browsing & locating Like button...`, 'BROWSING', '#3b82f6');
-
-    // Natural initial scroll (1.5 seconds)
+    // Initial human browse scroll
     window.scrollBy({ top: 160, behavior: 'smooth' });
     await sleep(1200);
 
-    // Find and click like button
-    const likeResult = await findAndClickLikeButton();
-    const likeStatusText = likeResult.alreadyLiked ? 'Already Liked 👍' : 'Liked Successfully 👍';
+    // 1. Auto-Like Action (if enabled)
+    let likeStatusText = '';
+    let isAlreadyLiked = false;
+    if (task.enable_like !== false) {
+      updateHud(`👍 Locating & clicking Like button...`, 'LIKING', '#3b82f6');
+      const likeResult = await findAndClickLikeButton();
+      isAlreadyLiked = !!likeResult.alreadyLiked;
+      likeStatusText = isAlreadyLiked ? 'Already Liked 👍' : 'Liked Successfully 👍';
+      await sleep(1200);
+    }
 
-    // Continuous natural human scrolling for remaining time (20-30s total)
-    await simulateHumanScrollCadence(totalDurationSeconds, (remSec, totalSec) => {
-      const pct = Math.round(((totalSec - remSec) / totalSec) * 100);
-      updateHud(
-        `<b>${likeStatusText}</b> as <i>${task.profile_name}</i> (${task.index}/${task.total})<br>` +
-        `⏳ Natural scrolling & browsing: <b>${remSec}s remaining</b>... Tab will close automatically.`,
-        `${pct}%`,
-        '#10b981'
-      );
-    });
+    // 2. Auto-Comment Action (if enabled)
+    let commentSubmitted = false;
+    if (task.enable_comment !== false) {
+      const tailoredComment = generateContextualComment(task.profile_name, task.index, task.post_snippet);
+      console.log(`💬 WSA: Generated contextual comment for "${task.profile_name}": "${tailoredComment}"`);
 
-    updateHud(`✅ Completed 20-30s session! Closing tab for next profile...`, 'DONE', '#10b981');
-    await sleep(1000);
+      updateHud(`💬 Finding comment box to paste tailored comment...`, 'COMMENTING', '#3b82f6');
+      const commentEditor = await findCommentEditor();
+
+      if (commentEditor) {
+        console.log('✅ WSA: Comment box located:', commentEditor);
+        commentEditor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await sleep(800);
+
+        // Paste comment into editor
+        await insertTextIntoEditor(commentEditor, tailoredComment);
+        console.log('✅ WSA: Comment pasted successfully into box.');
+
+        // User Requirement: 30-45 sec me submit hoga ... time change hota rahe har baar
+        const submitDelaySeconds = Math.floor(Math.random() * (45 - 30 + 1)) + 30; // 30 to 45 seconds dynamic delay
+        console.log(`⏱️ WSA: Comment will submit in ${submitDelaySeconds}s with natural human scrolling...`);
+
+        // Continuous natural human scrolling during 30-45s wait
+        await simulateHumanScrollCadence(submitDelaySeconds, (remSec, totalSec) => {
+          const pct = Math.round(((totalSec - remSec) / totalSec) * 100);
+          updateHud(
+            `${likeStatusText ? `<b>${likeStatusText}</b> | ` : ''}💬 Comment: <i>"${tailoredComment.slice(0, 32)}..."</i><br>` +
+            `⏳ Natural human review & scroll: <b>${remSec}s remaining</b>... (${totalSec}s dynamic submit delay)`,
+            `${pct}%`,
+            '#3b82f6'
+          );
+        });
+
+        // Submit comment after 30-45s!
+        updateHud(`🚀 Submitting comment on Facebook...`, 'SUBMITTING', '#10b981');
+        await submitFacebookComment(commentEditor);
+        commentSubmitted = true;
+        console.log('✅ WSA: Comment submitted successfully after dynamic wait!');
+        await sleep(3500);
+      } else {
+        console.warn('⚠️ WSA: Comment editor not found, executing natural scroll fallback.');
+        const fallbackWait = Math.floor(Math.random() * (35 - 25 + 1)) + 25;
+        await simulateHumanScrollCadence(fallbackWait, (remSec, totalSec) => {
+          updateHud(`⏳ Natural scroll: <b>${remSec}s remaining</b>...`, `${totalSec - remSec}s`, '#3b82f6');
+        });
+      }
+    } else {
+      // If only Like was enabled: 20-30s human scroll
+      const likeDuration = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+      await simulateHumanScrollCadence(likeDuration, (remSec, totalSec) => {
+        updateHud(
+          `<b>${likeStatusText}</b> as <i>${task.profile_name}</i> (${task.index}/${task.total})<br>` +
+          `⏳ Natural scrolling & browsing: <b>${remSec}s remaining</b>... Tab will close automatically.`,
+          `${Math.round(((totalSec - remSec) / totalSec) * 100)}%`,
+          '#10b981'
+        );
+      });
+    }
+
+    updateHud(`✅ Completed for "${task.profile_name}"! Tab closing in 3s...`, 'DONE', '#10b981');
+    await sleep(2500);
 
     chrome.runtime.sendMessage({
       action: 'LIKE_TASK_COMPLETED',
       result: {
         success: true,
         profile_name: task.profile_name,
-        already_liked: !!likeResult.alreadyLiked
+        already_liked: isAlreadyLiked,
+        commented: commentSubmitted
       }
     });
   }

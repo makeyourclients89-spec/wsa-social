@@ -1637,20 +1637,50 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </div>
   </div>
 
-  <!-- 🚀 MULTI-PROFILE ZERO-CLICK AUTO-LIKE VIA EXTENSION (20-30s Human Scroll) -->
+  <!-- 🚀 MULTI-PROFILE ZERO-CLICK AUTO-LIKE & AUTO-COMMENT VIA EXTENSION -->
   <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1.5px solid #3b82f6; border-radius:12px; padding:clamp(12px, 1.6vw, 16px); margin-bottom:16px; box-shadow:0 4px 12px rgba(37,99,235,0.12);">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-      <div style="flex:1 1 280px; min-width:0;">
-        <div style="font-size:var(--fluid-body, 13.5px); font-weight:800; color:#1e40af; display:flex; align-items:center; gap:6px;">
-          <span>👍 Multi-Profile Auto-Like (Zero-Click Extension)</span>
-          <span style="font-size:10px; background:#10b981; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">20-30s SCROLL</span>
-        </div>
-        <div style="font-size:var(--fluid-xs, 11.5px); color:#1e3a8a; margin-top:3px; line-height:1.45;">
-          Extension har connected profile/page (<?= count($connectedFbAccounts) ?> accounts) se bari-bari post kholegi, <b>20-30 second natural human scroll</b> karegi, <b>Like</b> karegi, aur tab band karke agle account par jayegi!
-        </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:var(--fluid-body, 13.5px); font-weight:800; color:#1e40af; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span>🚀 Multi-Profile Auto Like &amp; Comment (Zero-Click Extension)</span>
+        <span style="font-size:10px; background:#10b981; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">20-30s SCROLL</span>
+        <span style="font-size:10px; background:#3b82f6; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">30-45s COMMENT SUBMIT</span>
       </div>
-      <button type="button" id="btn-start-auto-like" class="btn" onclick="startMultiPageAutoLike()" style="background:#2563eb; color:#fff; font-weight:800; font-size:var(--fluid-sm, 12.5px); padding:clamp(8px, 1vw, 10px) clamp(12px, 1.4vw, 18px); border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 10px rgba(37,99,235,0.3); border:none; cursor:pointer; flex-shrink:0;">
-        <span>🚀 Start Auto-Like (All Connected Accounts)</span>
+      <div style="font-size:var(--fluid-xs, 11.5px); color:#1e3a8a; margin-top:3px; line-height:1.45;">
+        Har connected profile/page (<?= count($connectedFbAccounts) ?> accounts) se bari-bari post kholegi, <b>post-related smart comment paste</b> karegi (30-45s dynamic timing me submit hoga), <b>Like</b> karegi, aur tab band hokar agle profile par jayegi!
+      </div>
+    </div>
+
+    <!-- Configuration Controls -->
+    <div style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:var(--fluid-xs, 11.5px); font-weight:700; color:#1e3a8a; cursor:pointer;">
+          <input type="checkbox" id="boost_enable_like" checked style="width:16px; height:16px; accent-color:#2563eb;">
+          <span>👍 Auto-Like (Har profile se Like kare)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:var(--fluid-xs, 11.5px); font-weight:700; color:#1e3a8a; cursor:pointer;">
+          <input type="checkbox" id="boost_enable_comment" checked style="width:16px; height:16px; accent-color:#2563eb;">
+          <span>💬 Auto-Comment (Post related tailored comment dale)</span>
+        </label>
+      </div>
+
+      <!-- Delay Between Accounts Setting (Dusri profile kholne se pehle ka time) -->
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:6px; border-top:1px dashed #dbeafe;">
+        <label for="boost_delay_between_accounts" style="font-size:var(--fluid-xs, 11.5px); font-weight:700; color:#1e40af; display:flex; align-items:center; gap:5px;">
+          <span>⏱️ Agli profile kholne se pehle wait time (Delay between accounts):</span>
+        </label>
+        <select id="boost_delay_between_accounts" style="font-size:var(--fluid-xs, 11px); font-weight:700; padding:4px 10px; border-radius:6px; border:1.5px solid #3b82f6; background:#eff6ff; color:#1e40af; cursor:pointer;">
+          <option value="15">⚡ 15 Seconds (Fast Testing)</option>
+          <option value="25" selected>⏱️ 25 Seconds (Recommended)</option>
+          <option value="40">🛡️ 40 Seconds (Anti-Ban Safe)</option>
+          <option value="60">🔒 1 Minute (Ultra Safe)</option>
+          <option value="120">🔒 2 Minutes (Maximum Cadence)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button type="button" id="btn-start-auto-like" class="btn" onclick="startMultiPageAutoLike()" style="background:#2563eb; color:#fff; font-weight:800; font-size:var(--fluid-sm, 12.5px); padding:clamp(8px, 1vw, 10px) clamp(14px, 1.6vw, 20px); border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 10px rgba(37,99,235,0.3); border:none; cursor:pointer;">
+        <span>🚀 Start Auto Like &amp; Comment (All Connected Accounts)</span>
       </button>
     </div>
   </div>
@@ -1739,7 +1769,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   <!-- Primary Action: Direct ZIP Download (Manual Install) -->
   <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:clamp(12px, 1.8vw, 18px); margin-bottom:16px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-      <span style="font-size:var(--fluid-xs, 11.5px); font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.6)</span>
+      <span style="font-size:var(--fluid-xs, 11.5px); font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.7)</span>
       <span style="background:#2563eb; color:#fff; font-size:clamp(9px, 1vw, 10px); font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
     </div>
     <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn btn-ext-download" style="background:#2563eb; color:#fff; font-weight:800; font-size:clamp(13px, 1.6vw, 15px); padding:clamp(10px, 1.5vw, 13px) clamp(14px, 2vw, 20px); border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%; box-sizing:border-box;">
@@ -1792,7 +1822,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
 <script>
 // WSA Extension Realtime Detection Engine
-const LATEST_EXT_VERSION = '1.2.6';
+const LATEST_EXT_VERSION = '1.2.7';
 let isWsaExtensionActive = false;
 
 function compareVersions(v1, v2) {
@@ -1997,6 +2027,7 @@ function copyExtensionFolder(btn) {
 
 let currentBoostUrl = '';
 let currentBoostId = '';
+let currentBoostSnippet = '';
 const connectedFbAccountsList = <?= json_encode(array_values(array_map(fn($a) => [
   'id' => (int)$a['id'],
   'label' => $a['label'] ?? '',
@@ -2016,9 +2047,13 @@ function startMultiPageAutoLike() {
     return;
   }
 
+  const delaySec = parseInt(document.getElementById('boost_delay_between_accounts')?.value || '25', 10);
+  const enableLike = document.getElementById('boost_enable_like')?.checked !== false;
+  const enableComment = document.getElementById('boost_enable_comment')?.checked !== false;
+
   const btn = document.getElementById('btn-start-auto-like');
   if (btn) {
-    btn.innerHTML = '<span>⏳ Starting Auto-Like in Extension...</span>';
+    btn.innerHTML = '<span>⏳ Starting Auto-Boost in Extension...</span>';
     btn.style.opacity = '0.75';
   }
 
@@ -2026,13 +2061,17 @@ function startMultiPageAutoLike() {
     detail: {
       post_url: currentBoostUrl,
       post_id: currentBoostId,
-      profiles: connectedFbAccountsList
+      post_snippet: currentBoostSnippet,
+      profiles: connectedFbAccountsList,
+      delay_between_accounts_sec: delaySec,
+      enable_like: enableLike,
+      enable_comment: enableComment
     }
   }));
 
   setTimeout(() => {
     if (btn) {
-      btn.innerHTML = '<span>🚀 Auto-Like Running (' + connectedFbAccountsList.length + ' Accounts)!</span>';
+      btn.innerHTML = '<span>🚀 Auto-Boost Running (' + connectedFbAccountsList.length + ' Accounts)!</span>';
       btn.style.background = '#10b981';
       btn.style.opacity = '1';
     }
@@ -2049,6 +2088,7 @@ function handleBoostButtonClick(btn) {
 function openBoostModal(postId, postUrl, snippet) {
   currentBoostId = postId;
   currentBoostUrl = postUrl;
+  currentBoostSnippet = snippet || '';
   const snippetEl = document.getElementById('boost_modal_snippet');
   if (snippetEl) snippetEl.innerText = snippet || 'Facebook Post/Reel';
   const linkEl = document.getElementById('boost_modal_link');

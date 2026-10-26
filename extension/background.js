@@ -114,16 +114,16 @@ async function checkAndRunNext(ignoreTime = false, forcedClientId = null, forced
 }
 
 // ============================================================
-// Multi-Profile Auto-Like Queue Controller
+// Multi-Profile Auto-Like & Auto-Comment Queue Controller
 // ============================================================
 async function runNextLikeQueueItem() {
   const { like_queue } = await chrome.storage.local.get(['like_queue']);
   if (!like_queue || !like_queue.profiles) return;
 
-  const { post_url, profiles, current_index } = like_queue;
+  const { post_url, post_snippet, profiles, current_index, enable_like, enable_comment, delay_between_accounts_sec } = like_queue;
 
   if (current_index >= profiles.length) {
-    logEvent(`🎉 Multi-Profile Auto-Like complete! All ${profiles.length} connected accounts have liked the post.`);
+    logEvent(`🎉 Multi-Profile Auto-Boost complete! All ${profiles.length} connected accounts have finished.`);
     chrome.storage.local.remove(['like_queue', 'active_task']);
     isProcessing = false;
     return;
@@ -131,13 +131,16 @@ async function runNextLikeQueueItem() {
 
   const profile = profiles[current_index];
   isProcessing = true;
-  logEvent(`👍 [${current_index + 1}/${profiles.length}] Opening post to like as "${profile.label}"`);
+  logEvent(`👉 [${current_index + 1}/${profiles.length}] Opening post to like/comment as "${profile.label}"`);
 
   const task = {
     type: 'AUTO_LIKE',
     post_url: post_url,
+    post_snippet: post_snippet || '',
     profile_name: profile.label,
     profile_id: profile.id,
+    enable_like: enable_like !== false,
+    enable_comment: enable_comment !== false,
     index: current_index + 1,
     total: profiles.length
   };
@@ -147,15 +150,15 @@ async function runNextLikeQueueItem() {
   const tab = await chrome.tabs.create({ url: post_url, active: true });
   currentTabId = tab.id;
 
-  // 90s safety timeout per account
+  // 120s safety timeout per account
   setTimeout(() => {
     if (currentTabId === tab.id) {
-      logEvent(`⚠️ Auto-Like timeout for "${profile.label}". Advancing to next account.`);
+      logEvent(`⚠️ Auto-Boost timeout for "${profile.label}". Advancing to next account.`);
       chrome.tabs.remove(tab.id).catch(() => {});
       currentTabId = null;
       advanceLikeQueue();
     }
-  }, 90000);
+  }, 120000);
 }
 
 function advanceLikeQueue() {
@@ -166,10 +169,16 @@ function advanceLikeQueue() {
     }
     const queue = data.like_queue;
     queue.current_index++;
+    const delaySec = Math.max(5, parseInt(queue.delay_between_accounts_sec || 25, 10));
+
+    if (queue.current_index < queue.profiles.length) {
+      logEvent(`⏳ Waiting ${delaySec}s before opening next profile [${queue.current_index + 1}/${queue.profiles.length}]...`);
+    }
+
     chrome.storage.local.set({ like_queue: queue }, () => {
       setTimeout(() => {
         runNextLikeQueueItem();
-      }, 3500); // 3.5-second natural human pause before next profile
+      }, delaySec * 1000); // Configured delay between accounts!
     });
   });
 }
@@ -264,12 +273,21 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
       return true;
     }
 
-    logEvent(`🚀 Starting Auto-Like batch for ${profiles.length} profiles on post: ${postUrl}`);
+    const delaySec = Math.max(5, parseInt(req.delay_between_accounts_sec || 25, 10));
+    const enableLike = req.enable_like !== false;
+    const enableComment = req.enable_comment !== false;
+    const postSnippet = req.post_snippet || '';
+
+    logEvent(`🚀 Starting Auto-Boost for ${profiles.length} profiles (Delay: ${delaySec}s) on: ${postUrl}`);
 
     const likeQueue = {
       post_url: postUrl,
       post_id: req.post_id || null,
+      post_snippet: postSnippet,
       profiles: profiles,
+      delay_between_accounts_sec: delaySec,
+      enable_like: enableLike,
+      enable_comment: enableComment,
       current_index: 0
     };
 
@@ -283,12 +301,19 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 
   if (req.action === 'LIKE_TASK_COMPLETED') {
     const result = req.result;
-    logEvent(`✅ Auto-Like finished for "${result.profile_name}" (${result.already_liked ? 'Already Liked' : 'Newly Liked'})`);
+    logEvent(`✅ Auto-Boost finished for "${result.profile_name}" (Liked: ${result.already_liked ? 'Already' : 'Yes'}, Commented: ${result.commented ? 'Yes' : 'No'})`);
 
-    // Close tab after completing 20-30s session
+    // Close tab after completing session
     if (sender.tab && sender.tab.id) {
       chrome.tabs.remove(sender.tab.id).catch(() => {});
     }
+    currentTabId = null;
+
+    advanceLikeQueue();
+
+    sendResponse({ acknowledged: true });
+    return true;
+  }
     currentTabId = null;
 
     advanceLikeQueue();

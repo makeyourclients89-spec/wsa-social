@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const extVersion = '1.2.6';
+  const extVersion = '1.2.7';
 
   function isWsaDashboard() {
     return !!(
@@ -95,17 +95,26 @@
     }
   });
 
-  // Listen for multi-profile auto-like instruction from dashboard
+  // Listen for multi-profile auto-like / auto-comment instruction from dashboard
   window.addEventListener('wsa-trigger-auto-like', (e) => {
     try {
       const postUrl = e.detail?.post_url;
       const postId = e.detail?.post_id || null;
+      const postSnippet = e.detail?.post_snippet || '';
       const profiles = e.detail?.profiles || [];
+      const delaySec = e.detail?.delay_between_accounts_sec || 25;
+      const enableLike = e.detail?.enable_like !== false;
+      const enableComment = e.detail?.enable_comment !== false;
+
       chrome.runtime.sendMessage({
         action: 'START_AUTO_LIKE',
         post_url: postUrl,
         post_id: postId,
-        profiles: profiles
+        post_snippet: postSnippet,
+        profiles: profiles,
+        delay_between_accounts_sec: delaySec,
+        enable_like: enableLike,
+        enable_comment: enableComment
       }, (res) => {
         window.dispatchEvent(new CustomEvent('wsa-like-response', { detail: res }));
       });
