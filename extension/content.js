@@ -22,18 +22,20 @@
     hudElement.id = 'wsa-hud-card';
     hudElement.style.cssText = `
       position: fixed;
-      top: 18px;
-      right: 22px;
+      top: clamp(10px, 2vh, 22px);
+      right: clamp(10px, 2vw, 24px);
       z-index: 999999;
       background: #0f172a;
       color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 13px;
-      padding: 14px 18px;
-      border-radius: 12px;
+      font-size: clamp(11.5px, 1.1vw, 13px);
+      padding: clamp(10px, 1.2vw, 14px) clamp(12px, 1.5vw, 18px);
+      border-radius: clamp(9px, 1.2vw, 13px);
       border: 1.5px solid #3b82f6;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      max-width: 360px;
+      width: clamp(280px, 88vw, 370px);
+      max-width: 92vw;
+      box-sizing: border-box;
       transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
@@ -42,12 +44,12 @@
 
     hudElement.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:6px;">
-        <span style="font-weight:800; color:#60a5fa; display:flex; align-items:center; gap:6px;">
+        <span style="font-weight:800; font-size:clamp(12px, 1.2vw, 13.5px); color:#60a5fa; display:flex; align-items:center; gap:6px;">
           <span>⚡ WSA Auto-Pilot</span>
         </span>
-        <span id="wsa-hud-badge" style="background:#1d4ed8; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px;">WORKING</span>
+        <span id="wsa-hud-badge" style="background:#1d4ed8; color:#fff; font-size:clamp(9px, 0.95vw, 10.5px); font-weight:700; padding:2px 7px; border-radius:10px;">WORKING</span>
       </div>
-      <div id="wsa-hud-status" style="font-weight:600; color:#e2e8f0; font-size:12.5px; line-height:1.4;">${initialText}</div>
+      <div id="wsa-hud-status" style="font-weight:600; color:#e2e8f0; font-size:clamp(11px, 1.1vw, 12.5px); line-height:1.4;">${initialText}</div>
     `;
 
     document.body.appendChild(hudElement);
@@ -748,20 +750,20 @@
 
       const renderAssistHud = (customNote = '') => {
         const hudContent = `
-          <div style="font-weight:700; color:#f59e0b; font-size:13px; display:flex; align-items:center; gap:6px;">
+          <div style="font-weight:700; color:#f59e0b; font-size:clamp(12px, 1.2vw, 13.5px); display:flex; align-items:center; gap:6px;">
             <span>⚠️ Auto-Click Paused — Tab Khula Hai</span>
           </div>
-          <div style="font-size:12px; color:#f1f5f9; line-height:1.4; margin:6px 0;">
+          <div style="font-size:clamp(11px, 1.1vw, 12px); color:#f1f5f9; line-height:1.4; margin:6px 0;">
             Caption & Link modal me taiyar hai. Kripya Facebook modal me <b>Post / प्रकाशित करें</b> button dabayein.<br>
-            <span style="color:#94a3b8; font-size:11px;">
+            <span style="color:#94a3b8; font-size:clamp(10px, 1vw, 11px);">
               ${customNote || 'Aapke click karte hi extension Live link ya Pending status save karegi.'}
             </span>
           </div>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <button id="wsa-btn-manual-verify" style="flex:1; background:#10b981; color:#fff; border:none; padding:7px 10px; border-radius:6px; font-weight:700; font-size:11.5px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
+          <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+            <button id="wsa-btn-manual-verify" style="flex:1 1 140px; background:#10b981; color:#fff; border:none; padding:clamp(6px, 0.9vw, 8px) clamp(8px, 1vw, 12px); border-radius:6px; font-weight:700; font-size:clamp(11px, 1.1vw, 12px); cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
               ✓ Maine Post Kar Diya
             </button>
-            <button id="wsa-btn-manual-skip" style="background:#475569; color:#f1f5f9; border:none; padding:7px 9px; border-radius:6px; font-weight:600; font-size:11px; cursor:pointer;">
+            <button id="wsa-btn-manual-skip" style="background:#475569; color:#f1f5f9; border:none; padding:clamp(6px, 0.9vw, 8px) clamp(8px, 1vw, 10px); border-radius:6px; font-weight:600; font-size:clamp(10.5px, 1vw, 11.5px); cursor:pointer;">
               Skip Task
             </button>
           </div>

@@ -41,26 +41,147 @@ $livePagePosts = $livePagePosts ?? $sevenDayPosts ?? [];
 $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$a['id'] !== (int)$defaultMainPageId));
 ?>
 
+<!-- Fluid Responsive Typography & Scaling Engine (CSS clamp) -->
+<style id="wsa-responsive-groups-styles">
+  :root {
+    --fluid-h1: clamp(1.25rem, 1rem + 1.25vw, 1.75rem); /* ~20px - 28px */
+    --fluid-h2: clamp(1.05rem, 0.92rem + 0.75vw, 1.35rem); /* ~16.8px - 21.6px */
+    --fluid-h3: clamp(0.95rem, 0.85rem + 0.5vw, 1.15rem); /* ~15.2px - 18.4px */
+    --fluid-body: clamp(0.8125rem, 0.76rem + 0.26vw, 0.9375rem); /* ~13px - 15px */
+    --fluid-sm: clamp(0.72rem, 0.68rem + 0.18vw, 0.8125rem); /* ~11.5px - 13px */
+    --fluid-xs: clamp(0.625rem, 0.6rem + 0.12vw, 0.72rem); /* ~10px - 11.5px */
+    --fluid-kpi: clamp(1.25rem, 1.05rem + 1.35vw, 1.75rem); /* ~20px - 28px */
+    --fluid-pad-card: clamp(10px, 1.4vw, 18px);
+    --fluid-pad-modal: clamp(14px, 2.5vw, 24px);
+    --fluid-btn-pad: clamp(7px, 0.9vw, 10px) clamp(10px, 1.2vw, 16px);
+  }
+
+  /* Responsive Fluid Header */
+  .hero.small h1 {
+    font-size: var(--fluid-h1) !important;
+  }
+  .hero.small p {
+    font-size: var(--fluid-body) !important;
+  }
+
+  /* Responsive Fluid KPI / Top Stats Cards */
+  .groups-kpi-card {
+    padding: var(--fluid-pad-card) !important;
+  }
+  .groups-kpi-val {
+    font-size: var(--fluid-kpi) !important;
+  }
+  .groups-kpi-lbl {
+    font-size: var(--fluid-xs) !important;
+  }
+
+  /* Responsive Tabs Navigation */
+  .account-filter-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: clamp(6px, 1vw, 10px) !important;
+  }
+  .tab-pill {
+    font-size: var(--fluid-sm) !important;
+    padding: clamp(6px, 0.9vw, 9px) clamp(10px, 1.3vw, 16px) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+
+  /* Responsive Modals / Dialogs across all screen sizes */
+  dialog {
+    max-width: min(94vw, 680px) !important;
+    width: 94vw !important;
+    padding: var(--fluid-pad-modal) !important;
+    border-radius: clamp(10px, 1.6vw, 16px) !important;
+    box-sizing: border-box;
+  }
+  dialog h3 {
+    font-size: var(--fluid-h3) !important;
+  }
+  dialog p, dialog li {
+    font-size: var(--fluid-body) !important;
+  }
+
+  /* Responsive Extension Setup Modal Specifics */
+  #modal-extension-setup {
+    max-width: min(94vw, 660px) !important;
+  }
+  #modal-ext-status-banner {
+    padding: clamp(10px, 1.4vw, 14px) clamp(12px, 1.8vw, 18px) !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  #modal-ext-status-title {
+    font-size: var(--fluid-body) !important;
+  }
+  #modal-ext-status-sub {
+    font-size: var(--fluid-xs) !important;
+  }
+  .btn-ext-download {
+    font-size: clamp(13px, 1.6vw, 15.5px) !important;
+    padding: clamp(10px, 1.5vw, 13px) clamp(14px, 2vw, 20px) !important;
+  }
+
+  /* Responsive Table & Queue Cards */
+  .tablewrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tablewrap table th {
+    font-size: var(--fluid-xs) !important;
+  }
+  .tablewrap table td {
+    font-size: var(--fluid-sm) !important;
+  }
+
+  /* Mobile and Tablet Breakpoints */
+  @media (max-width: 768px) {
+    .hero.small > div {
+      flex-direction: column;
+      align-items: stretch !important;
+    }
+    .hero.small .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .segmented-nav-control {
+      overflow-x: auto;
+      width: 100%;
+      display: flex;
+      flex-wrap: nowrap;
+    }
+    .segmented-nav-pill {
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: var(--fluid-xs) !important;
+    }
+  }
+</style>
+
 <!-- Clean Minimal Header -->
 <div class="hero small" style="margin-bottom: 18px;">
   <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:14px;">
     <div>
-      <h1 style="letter-spacing:-0.02em; margin:0 0 4px; font-size:22px; font-weight:800; display:flex; align-items:center; gap:8px;">
+      <h1 style="letter-spacing:-0.02em; margin:0 0 4px; font-size:var(--fluid-h1, 22px); font-weight:800; display:flex; align-items:center; gap:8px;">
         <span style="color:#1877f2; display:inline-flex;"><?= Icons::platform('facebook', 22) ?></span>
         <span>Facebook Groups Manager</span>
       </h1>
-      <p style="font-size:13px; color:var(--muted); margin:0;">
+      <p style="font-size:var(--fluid-body, 13px); color:var(--muted); margin:0;">
         Apne connected Facebook profiles ke joined groups manage karein, posts schedule karein aur safe cadence ke sath share karein.
       </p>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <button type="button" class="btn" style="background:#1877f2; color:#ffffff; font-weight:700; border-radius:8px; padding:8px 14px; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(24,119,242,0.25);" onclick="document.getElementById('modal-sync-profile-groups').showModal()">
+      <button type="button" class="btn" style="background:#1877f2; color:#ffffff; font-weight:700; border-radius:8px; padding:clamp(7px, 1vw, 10px) clamp(10px, 1.4vw, 16px); font-size:var(--fluid-sm, 13px); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(24,119,242,0.25);" onclick="document.getElementById('modal-sync-profile-groups').showModal()">
         <span>📥 Sync / Import Groups</span>
       </button>
-      <button type="button" class="btn light" style="font-size:13px; padding:8px 12px;" onclick="openAddGroupModal('single')">
+      <button type="button" class="btn light" style="font-size:var(--fluid-sm, 13px); padding:clamp(7px, 1vw, 10px) clamp(10px, 1.2vw, 14px);" onclick="openAddGroupModal('single')">
         <?= Icons::svg('plus', 14) ?> <span>Add Single Group</span>
       </button>
-      <button type="button" class="btn light" style="font-size:13px; padding:8px 12px;" onclick="openAddGroupModal('bulk')">
+      <button type="button" class="btn light" style="font-size:var(--fluid-sm, 13px); padding:clamp(7px, 1vw, 10px) clamp(10px, 1.2vw, 14px);" onclick="openAddGroupModal('bulk')">
         <?= Icons::svg('sparkles', 14) ?> <span>Bulk CSV</span>
       </button>
     </div>
@@ -68,51 +189,65 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 </div>
 
 <!-- Compact Top Stats (3 Clean Cards) -->
-<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-  <div class="card" style="padding:14px 18px; margin:0; display:flex; align-items:center; gap:14px;">
-    <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(clamp(180px, 22vw, 240px), 1fr)); gap: 12px; margin-bottom: 20px;">
+  <div class="card groups-kpi-card" style="padding:clamp(12px, 1.5vw, 18px); margin:0; display:flex; align-items:center; gap:14px;">
+    <div style="width:clamp(34px, 3.5vw, 42px); height:clamp(34px, 3.5vw, 42px); border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <?= Icons::platform('facebook', 20) ?>
     </div>
     <div>
-      <div style="font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Joined Groups</div>
-      <div style="font-size:22px; font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$totalGroupsCount ?> <span style="font-size:12px; font-weight:500; color:var(--muted);">groups</span></div>
+      <div class="groups-kpi-lbl" style="font-size:var(--fluid-xs, 11px); color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Joined Groups</div>
+      <div class="groups-kpi-val" style="font-size:var(--fluid-kpi, 22px); font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$totalGroupsCount ?> <span style="font-size:var(--fluid-xs, 11px); font-weight:500; color:var(--muted);">groups</span></div>
     </div>
   </div>
 
-  <div class="card" style="padding:14px 18px; margin:0; display:flex; align-items:center; gap:14px;">
-    <div style="width:40px; height:40px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+  <div class="card groups-kpi-card" style="padding:clamp(12px, 1.5vw, 18px); margin:0; display:flex; align-items:center; gap:14px;">
+    <div style="width:clamp(34px, 3.5vw, 42px); height:clamp(34px, 3.5vw, 42px); border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <?= Icons::svg('user', 18) ?>
     </div>
     <div>
-      <div style="font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Connected Profiles</div>
-      <div style="font-size:22px; font-weight:800; color:var(--ink); line-height:1.2;"><?= count($connectedFbAccounts) ?> <span style="font-size:12px; font-weight:500; color:var(--muted);">accounts</span></div>
+      <div class="groups-kpi-lbl" style="font-size:var(--fluid-xs, 11px); color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Connected Profiles</div>
+      <div class="groups-kpi-val" style="font-size:var(--fluid-kpi, 22px); font-weight:800; color:var(--ink); line-height:1.2;"><?= count($connectedFbAccounts) ?> <span style="font-size:var(--fluid-xs, 11px); font-weight:500; color:var(--muted);">accounts</span></div>
     </div>
   </div>
 
-  <div class="card" style="padding:14px 18px; margin:0; display:flex; align-items:center; gap:14px;">
-    <div style="width:40px; height:40px; border-radius:10px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+  <div class="card groups-kpi-card" style="padding:clamp(12px, 1.5vw, 18px); margin:0; display:flex; align-items:center; gap:14px;">
+    <div style="width:clamp(34px, 3.5vw, 42px); height:clamp(34px, 3.5vw, 42px); border-radius:10px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <?= Icons::svg('share', 18) ?>
     </div>
     <div>
-      <div style="font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Shares Done Today</div>
-      <div style="font-size:22px; font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$stats['total_shares_today'] ?> <span style="font-size:12px; font-weight:500; color:var(--muted);">/ <?= (int)$stats['target_goal'] ?></span></div>
+      <div class="groups-kpi-lbl" style="font-size:var(--fluid-xs, 11px); color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Shares Done Today</div>
+      <div class="groups-kpi-val" style="font-size:var(--fluid-kpi, 22px); font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$stats['total_shares_today'] ?> <span style="font-size:var(--fluid-xs, 11px); font-weight:500; color:var(--muted);">/ <?= (int)$stats['target_goal'] ?></span></div>
     </div>
   </div>
 </div>
 
 <!-- 🎯 DEFAULT MAIN FACEBOOK PAGE BANNER -->
-<div style="background:#ffffff; border:1px solid #bfdbfe; border-left:4px solid #1877f2; border-radius:10px; padding:12px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 6px rgba(24,119,242,0.06);">
+<div style="background:#ffffff; border:1px solid #bfdbfe; border-left:4px solid #1877f2; border-radius:10px; padding:clamp(10px, 1.4vw, 14px) clamp(12px, 1.8vw, 18px); margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 6px rgba(24,119,242,0.06);">
   <div style="display:flex; align-items:center; gap:12px;">
-    <div style="width:36px; height:36px; border-radius:8px; background:#eff6ff; color:#1877f2; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+    <div style="width:clamp(32px, 3vw, 38px); height:clamp(32px, 3vw, 38px); border-radius:8px; background:#eff6ff; color:#1877f2; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <?= Icons::platform('facebook', 20) ?>
     </div>
     <div>
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:11px; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.04em;">Default Main Facebook Page:</span>
-        <span style="font-size:10px; font-weight:700; background:#dcfce7; color:#166534; padding:1px 7px; border-radius:12px;">ACTIVE DEFAULT</span>
+        <span style="font-size:var(--fluid-xs, 11px); font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.04em;">Default Main Facebook Page:</span>
+        <span style="font-size:clamp(9px, 1vw, 10.5px); font-weight:700; background:#dcfce7; color:#166534; padding:1px 7px; border-radius:12px;">ACTIVE DEFAULT</span>
       </div>
-      <div style="font-size:15px; font-weight:800; color:var(--ink); margin-top:2px;">
+      <div style="font-size:var(--fluid-h3, 15px); font-weight:800; color:var(--ink); margin-top:2px;">
         <?= h($defaultMainPage['label'] ?? 'WSA Digital Agency (Page)') ?>
+        <span style="font-size:var(--fluid-xs, 11.5px); font-weight:500; color:var(--muted); margin-left:6px;">(Page ID: <code><?= h($defaultMainPage['external_id'] ?? '573548745852007') ?></code>)</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <button type="button" id="header-ext-status-btn" class="btn light" onclick="openExtensionSetupModal(true)" style="font-size:var(--fluid-sm, 12px); padding:clamp(6px, 0.9vw, 8px) clamp(10px, 1.2vw, 14px); border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+      <span id="header-ext-status-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span>
+      <span id="header-ext-status-text">Checking Extension...</span>
+    </button>
+    <button type="button" class="btn light" onclick="document.getElementById('modal-change-default-page').showModal()" style="font-size:var(--fluid-sm, 12px); padding:clamp(6px, 0.9vw, 8px) clamp(10px, 1.2vw, 14px); border-radius:6px;">
+      🔄 Change Default Page
+    </button>
+  </div>
+</div>
         <span style="font-size:11.5px; font-weight:500; color:var(--muted); margin-left:6px;">(Page ID: <code><?= h($defaultMainPage['external_id'] ?? '573548745852007') ?></code>)</span>
       </div>
     </div>
@@ -678,26 +813,26 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 <div id="tab-pane-queue" class="groups-main-tab-pane" style="display:none;">
 
   <!-- 🚀 ZERO-CLICK CHROME EXTENSION PROMO / CONTROLLER CARD -->
-  <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border:1.5px solid #3b82f6; border-radius:12px; padding:16px 20px; margin-bottom:18px; color:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 6px 20px rgba(0,0,0,0.15);">
-    <div style="display:flex; align-items:center; gap:14px;">
-      <div style="width:46px; height:46px; border-radius:12px; background:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:0 4px 12px rgba(37,99,235,0.4);">
+  <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border:1.5px solid #3b82f6; border-radius:clamp(10px, 1.4vw, 14px); padding:clamp(12px, 1.8vw, 18px) clamp(14px, 2vw, 22px); margin-bottom:18px; color:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 6px 20px rgba(0,0,0,0.15);">
+    <div style="display:flex; align-items:center; gap:clamp(10px, 1.4vw, 14px); flex:1 1 320px; min-width:0;">
+      <div style="width:clamp(38px, 4vw, 46px); height:clamp(38px, 4vw, 46px); border-radius:12px; background:#2563eb; display:flex; align-items:center; justify-content:center; font-size:clamp(18px, 2vw, 22px); flex-shrink:0; box-shadow:0 4px 12px rgba(37,99,235,0.4);">
         ⚡
       </div>
-      <div>
+      <div style="min-width:0;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <b style="font-size:15px; color:#fff;">Option B: Zero-Click Chrome Extension Ready!</b>
-          <span style="background:#10b981; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; letter-spacing:0.5px;">BINA BUTTON DABAYE POSTING</span>
+          <b style="font-size:var(--fluid-h3, 15px); color:#fff;">Option B: Zero-Click Chrome Extension Ready!</b>
+          <span style="background:#10b981; color:#fff; font-size:clamp(9px, 0.95vw, 10.5px); font-weight:800; padding:2px 8px; border-radius:12px; letter-spacing:0.5px;">BINA BUTTON DABAYE POSTING</span>
         </div>
-        <div style="font-size:12.5px; color:#94a3b8; margin-top:3px; line-height:1.4;">
+        <div style="font-size:var(--fluid-sm, 12.5px); color:#94a3b8; margin-top:3px; line-height:1.4;">
           Extension background me queue check karega, Facebook group kholega, reel card + caption banayega, <b>"Post" button automatically dabayega</b>, aur status (Live / Pending Approval) save karega!
         </div>
       </div>
     </div>
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:12.5px; padding:9px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,0.35);">
+      <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:var(--fluid-sm, 12.5px); padding:clamp(8px, 1.1vw, 10px) clamp(12px, 1.5vw, 18px); border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,0.35);">
         <span>⬇️ Download Extension Package (.zip)</span>
       </a>
-      <button type="button" class="btn" onclick="openExtensionSetupModal(true)" style="background:#334155; color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:8px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+      <button type="button" class="btn" onclick="openExtensionSetupModal(true)" style="background:#334155; color:#fff; font-weight:700; font-size:var(--fluid-sm, 12.5px); padding:clamp(8px, 1.1vw, 10px) clamp(12px, 1.5vw, 18px); border-radius:8px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
         <span>📖 Setup & Update Guide</span>
       </button>
     </div>
@@ -1555,85 +1690,85 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 </dialog>
 
 <!-- MODAL 8: CHROME EXTENSION SETUP & AUTO-DETECTION GUIDE -->
-<dialog id="modal-extension-setup" style="border:1px solid var(--line); border-radius:14px; padding:24px; max-width:640px; width:92%; background:var(--bg); color:var(--ink); box-shadow:0 20px 45px rgba(0,0,0,0.3);">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+<dialog id="modal-extension-setup" style="border:1px solid var(--line); border-radius:clamp(10px, 1.6vw, 16px); padding:clamp(14px, 2.5vw, 24px); max-width:min(94vw, 660px); width:94vw; background:var(--bg); color:var(--ink); box-shadow:0 20px 45px rgba(0,0,0,0.3); box-sizing:border-box;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px; gap:10px;">
     <div>
-      <h3 style="margin:0; font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px;">
+      <h3 style="margin:0; font-size:var(--fluid-h3, 17px); font-weight:800; display:flex; align-items:center; gap:8px;">
         <span style="color:#2563eb;">🚀</span>
         <span>WSA Chrome Extension (Zero-Click Auto Share)</span>
       </h3>
-      <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">
+      <p style="margin:4px 0 0; font-size:var(--fluid-sm, 12.5px); color:var(--muted); line-height:1.4;">
         Facebook groups me bina kisi manual click ke automatically background me posting karne ke liye.
       </p>
     </div>
-    <button type="button" class="smallbtn" onclick="document.getElementById('modal-extension-setup').close()" style="background:transparent; border:none; font-size:18px; cursor:pointer;">✕</button>
+    <button type="button" class="smallbtn" onclick="document.getElementById('modal-extension-setup').close()" style="background:transparent; border:none; font-size:clamp(16px, 2vw, 20px); cursor:pointer; padding:4px 8px; line-height:1; color:var(--muted);">✕</button>
   </div>
 
   <!-- Real-time Live Status Banner -->
-  <div id="modal-ext-status-banner" style="display:flex; align-items:center; justify-content:space-between; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
-    <div style="display:flex; align-items:center; gap:10px;">
-      <span id="modal-ext-status-icon" style="font-size:22px;">🛑</span>
-      <div>
-        <div id="modal-ext-status-title" style="font-size:13.5px; font-weight:800; color:#b91c1c;">Extension Abhi Browser Me Active Nahi Hai</div>
-        <div id="modal-ext-status-sub" style="font-size:11.5px; color:#991b1b;">Zero-Click background sharing ke liye niche diye download button se ZIP package lein.</div>
+  <div id="modal-ext-status-banner" style="display:flex; align-items:center; justify-content:space-between; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:clamp(10px, 1.5vw, 14px) clamp(12px, 1.8vw, 16px); margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; align-items:center; gap:10px; flex:1 1 240px; min-width:0;">
+      <span id="modal-ext-status-icon" style="font-size:clamp(18px, 2.2vw, 22px); flex-shrink:0;">🛑</span>
+      <div style="min-width:0;">
+        <div id="modal-ext-status-title" style="font-size:var(--fluid-body, 13.5px); font-weight:800; color:#b91c1c; line-height:1.3;">Extension Abhi Browser Me Active Nahi Hai</div>
+        <div id="modal-ext-status-sub" style="font-size:var(--fluid-xs, 11px); color:#991b1b; line-height:1.3; margin-top:2px;">Zero-Click background sharing ke liye niche diye download button se ZIP package lein.</div>
       </div>
     </div>
-    <button type="button" class="btn light" onclick="verifyExtensionConnection(true)" style="font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:6px; white-space:nowrap;">
+    <button type="button" class="btn light" onclick="verifyExtensionConnection(true)" style="font-size:var(--fluid-xs, 11px); font-weight:700; padding:clamp(5px, 0.8vw, 7px) clamp(10px, 1.2vw, 14px); border-radius:6px; white-space:nowrap; flex-shrink:0;">
       🔄 Check Again
     </button>
   </div>
 
   <!-- Primary Action: Direct ZIP Download (Manual Install) -->
-  <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:18px; margin-bottom:16px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-      <span style="font-size:12.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.4)</span>
-      <span style="background:#2563eb; color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
+  <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:clamp(12px, 1.8vw, 18px); margin-bottom:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+      <span style="font-size:var(--fluid-xs, 11.5px); font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.5)</span>
+      <span style="background:#2563eb; color:#fff; font-size:clamp(9px, 1vw, 10px); font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
     </div>
-    <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn" style="background:#2563eb; color:#fff; font-weight:800; font-size:14.5px; padding:13px 18px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%;">
-      <span style="font-size:18px;">⬇️</span>
+    <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn btn-ext-download" style="background:#2563eb; color:#fff; font-weight:800; font-size:clamp(13px, 1.6vw, 15px); padding:clamp(10px, 1.5vw, 13px) clamp(14px, 2vw, 20px); border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%; box-sizing:border-box;">
+      <span style="font-size:clamp(15px, 2vw, 18px);">⬇️</span>
       <span>Download Extension Package (.zip)</span>
     </a>
-    <div style="font-size:12px; color:#1e3a8a; margin-top:9px; line-height:1.45;">
+    <div style="font-size:var(--fluid-xs, 11.5px); color:#1e3a8a; margin-top:9px; line-height:1.45;">
       👉 <b>Chrome Security Rule:</b> Chrome extensions ko automatically install nahi hone deta, isliye <b>ZIP download karke manual load karna zaroori hai</b> (niche sirf 3 aasan steps hain).
     </div>
-    <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:6px;">
+    <div style="text-align:right; font-size:var(--fluid-xs, 10.5px); color:var(--muted); margin-top:6px;">
       Server direct link: <a href="index.php?page=download-extension-zip" style="color:#2563eb; font-weight:700;">Download ZIP</a>
     </div>
   </div>
 
-  <div style="font-weight:800; font-size:13.5px; margin-bottom:10px; color:var(--ink); display:flex; align-items:center; gap:6px;">
+  <div style="font-weight:800; font-size:var(--fluid-body, 13.5px); margin-bottom:10px; color:var(--ink); display:flex; align-items:center; gap:6px;">
     <span>🛠️</span>
     <span>Chrome me Manual Install / Update Karne Ke 3 Aasan Steps:</span>
   </div>
 
-  <ol style="padding-left:22px; line-height:1.8; font-size:13px; color:var(--ink); margin-bottom:16px;">
-    <li>
+  <ol style="padding-left:clamp(16px, 2.5vw, 22px); line-height:1.75; font-size:var(--fluid-sm, 12.5px); color:var(--ink); margin-bottom:16px;">
+    <li style="margin-bottom:6px;">
       Downloaded ZIP file (<code>wsa-social-extension.zip</code>) par right-click karke <b>"Extract All..."</b> (Unzip) karein.
     </li>
-    <li>
+    <li style="margin-bottom:6px;">
       Naye Chrome tab me open karein: <code style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-weight:700; cursor:pointer;" onclick="navigator.clipboard?.writeText('chrome://extensions')">chrome://extensions</code> aur top-right corner me <b>"Developer mode"</b> toggle switch ko <b>ON</b> karein.
     </li>
-    <li>
+    <li style="margin-bottom:6px;">
       Top-left corner me <b>"Load unpacked"</b> click karein aur extract kiya hua <code>extension</code> folder select karein!
       <br>
-      <span style="font-size:12px; color:#059669; font-weight:700;">
+      <span style="font-size:var(--fluid-xs, 11.5px); color:#059669; font-weight:700; line-height:1.4; display:inline-block; margin-top:3px;">
         🔄 <b>Agar purana version pehle se load hai:</b> To naya download karke extract karein aur Chrome me <code>chrome://extensions</code> par jakar WSA card me <b>Reload (🔄 circular arrow)</b> daba dein!
       </span>
     </li>
   </ol>
 
   <!-- Optional Windows Helper Script -->
-  <details style="margin-bottom:16px; background:var(--bg-subtle, #f8fafc); border:1px solid var(--line); border-radius:10px; padding:10px 14px;">
-    <summary style="cursor:pointer; font-weight:700; font-size:12px; color:var(--muted);">
+  <details style="margin-bottom:16px; background:var(--bg-subtle, #f8fafc); border:1px solid var(--line); border-radius:10px; padding:clamp(8px, 1.2vw, 12px) clamp(10px, 1.5vw, 14px);">
+    <summary style="cursor:pointer; font-weight:700; font-size:var(--fluid-xs, 11.5px); color:var(--muted);">
       ⚡ Optional Windows Helper (.bat file) - agar manually unzip nahi karna chahte
     </summary>
-    <div style="margin-top:10px; font-size:12px;">
+    <div style="margin-top:10px; font-size:var(--fluid-xs, 11.5px); line-height:1.45;">
       <a href="Install-WSA-Extension.bat" download="Install-WSA-Extension.bat" style="color:#059669; font-weight:700;">Install-WSA-Extension.bat download karein</a> - yeh script files ko auto-extract karke Chrome Extensions window open kar deti hai.
     </div>
   </details>
 
   <div style="display:flex; justify-content:flex-end; align-items:center; border-top:1px solid var(--line); padding-top:12px;">
-    <button type="button" class="btn light" onclick="document.getElementById('modal-extension-setup').close()">Close</button>
+    <button type="button" class="btn light" onclick="document.getElementById('modal-extension-setup').close()" style="font-size:var(--fluid-sm, 12px); padding:clamp(6px, 0.9vw, 8px) clamp(12px, 1.5vw, 18px);">Close</button>
   </div>
 </dialog>
 

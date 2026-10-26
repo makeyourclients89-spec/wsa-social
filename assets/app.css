@@ -9,6 +9,15 @@
   --card-bg: #ffffff;
   --green: #047857;
   --red: #b91c1c;
+
+  /* Fluid Responsive Typography Scale (CSS clamp) */
+  --fluid-h1: clamp(1.25rem, 1rem + 1.25vw, 1.75rem);
+  --fluid-h2: clamp(1.05rem, 0.92rem + 0.75vw, 1.35rem);
+  --fluid-h3: clamp(0.95rem, 0.85rem + 0.5vw, 1.15rem);
+  --fluid-body: clamp(0.8125rem, 0.76rem + 0.26vw, 0.9375rem);
+  --fluid-sm: clamp(0.72rem, 0.68rem + 0.18vw, 0.8125rem);
+  --fluid-xs: clamp(0.625rem, 0.6rem + 0.12vw, 0.72rem);
+  --fluid-kpi: clamp(1.25rem, 1.05rem + 1.35vw, 1.75rem);
 }
 [data-theme="dark"] {
   --navy: #030712;
@@ -284,8 +293,8 @@ header {
   margin-bottom: 20px;
 }
 .hero.small { margin-bottom: 14px; }
-.hero h1 { font-size: 26px; margin: 4px 0; color: var(--ink); }
-.hero p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.hero h1 { font-size: var(--fluid-h1, 26px); margin: 4px 0; color: var(--ink); }
+.hero p { margin: 0; color: var(--muted); font-size: var(--fluid-body, 13.5px); }
 .eyebrow {
   font-size: 11px;
   color: var(--blue);
