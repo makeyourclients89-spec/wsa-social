@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WSA Social - Auto Facebook Group Share",
-  "version": "1.2.5",
-  "description": "Zero-Click Automatic Sharing with Active Reel Preview Detection, Diagnostics & Viral Hashtags.",
+  "version": "1.2.6",
+  "description": "Zero-Click Automatic Group Sharing & Multi-Profile Auto-Like with Human Scroll Cadence.",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -38,7 +38,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.facebook.com/groups/*"
+        "https://*.facebook.com/*"
       ],
       "js": [
         "content.js"

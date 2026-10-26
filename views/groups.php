@@ -1637,6 +1637,24 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </div>
   </div>
 
+  <!-- 🚀 MULTI-PROFILE ZERO-CLICK AUTO-LIKE VIA EXTENSION (20-30s Human Scroll) -->
+  <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1.5px solid #3b82f6; border-radius:12px; padding:clamp(12px, 1.6vw, 16px); margin-bottom:16px; box-shadow:0 4px 12px rgba(37,99,235,0.12);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div style="flex:1 1 280px; min-width:0;">
+        <div style="font-size:var(--fluid-body, 13.5px); font-weight:800; color:#1e40af; display:flex; align-items:center; gap:6px;">
+          <span>👍 Multi-Profile Auto-Like (Zero-Click Extension)</span>
+          <span style="font-size:10px; background:#10b981; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">20-30s SCROLL</span>
+        </div>
+        <div style="font-size:var(--fluid-xs, 11.5px); color:#1e3a8a; margin-top:3px; line-height:1.45;">
+          Extension har connected profile/page (<?= count($connectedFbAccounts) ?> accounts) se bari-bari post kholegi, <b>20-30 second natural human scroll</b> karegi, <b>Like</b> karegi, aur tab band karke agle account par jayegi!
+        </div>
+      </div>
+      <button type="button" id="btn-start-auto-like" class="btn" onclick="startMultiPageAutoLike()" style="background:#2563eb; color:#fff; font-weight:800; font-size:var(--fluid-sm, 12.5px); padding:clamp(8px, 1vw, 10px) clamp(12px, 1.4vw, 18px); border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 10px rgba(37,99,235,0.3); border:none; cursor:pointer; flex-shrink:0;">
+        <span>🚀 Start Auto-Like (All Connected Accounts)</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Multi-Page Comment & Like Grid -->
   <div style="margin-bottom:16px;">
     <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
@@ -1721,7 +1739,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   <!-- Primary Action: Direct ZIP Download (Manual Install) -->
   <div style="background:rgba(37,99,235,0.06); border:1.5px solid #3b82f6; border-radius:12px; padding:clamp(12px, 1.8vw, 18px); margin-bottom:16px;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-      <span style="font-size:var(--fluid-xs, 11.5px); font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.5)</span>
+      <span style="font-size:var(--fluid-xs, 11.5px); font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px;">WSA Extension Package (Latest v1.2.6)</span>
       <span style="background:#2563eb; color:#fff; font-size:clamp(9px, 1vw, 10px); font-weight:800; padding:2px 8px; border-radius:10px;">ZIP PACKAGE</span>
     </div>
     <a href="wsa-social-extension.zip" download="wsa-social-extension.zip" class="btn btn-ext-download" style="background:#2563eb; color:#fff; font-weight:800; font-size:clamp(13px, 1.6vw, 15px); padding:clamp(10px, 1.5vw, 13px) clamp(14px, 2vw, 20px); border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.35); width:100%; box-sizing:border-box;">
@@ -1774,7 +1792,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
 <script>
 // WSA Extension Realtime Detection Engine
-const LATEST_EXT_VERSION = '1.2.5';
+const LATEST_EXT_VERSION = '1.2.6';
 let isWsaExtensionActive = false;
 
 function compareVersions(v1, v2) {
@@ -1979,6 +1997,47 @@ function copyExtensionFolder(btn) {
 
 let currentBoostUrl = '';
 let currentBoostId = '';
+const connectedFbAccountsList = <?= json_encode(array_values(array_map(fn($a) => [
+  'id' => (int)$a['id'],
+  'label' => $a['label'] ?? '',
+  'external_id' => $a['external_id'] ?? ''
+], $connectedFbAccounts))) ?>;
+
+function startMultiPageAutoLike() {
+  const isInstalled = document.documentElement.getAttribute('data-wsa-extension-installed') === '1';
+  if (!isInstalled) {
+    document.getElementById('modal-boost-post')?.close();
+    document.getElementById('modal-extension-setup')?.showModal();
+    return;
+  }
+
+  if (!currentBoostUrl) {
+    alert('Kripya pehle post ya reel chunein.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-start-auto-like');
+  if (btn) {
+    btn.innerHTML = '<span>⏳ Starting Auto-Like in Extension...</span>';
+    btn.style.opacity = '0.75';
+  }
+
+  window.dispatchEvent(new CustomEvent('wsa-trigger-auto-like', {
+    detail: {
+      post_url: currentBoostUrl,
+      post_id: currentBoostId,
+      profiles: connectedFbAccountsList
+    }
+  }));
+
+  setTimeout(() => {
+    if (btn) {
+      btn.innerHTML = '<span>🚀 Auto-Like Running (' + connectedFbAccountsList.length + ' Accounts)!</span>';
+      btn.style.background = '#10b981';
+      btn.style.opacity = '1';
+    }
+  }, 1000);
+}
 
 function handleBoostButtonClick(btn) {
   const postId = btn.getAttribute('data-post-id') || '';

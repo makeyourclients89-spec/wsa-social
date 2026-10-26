@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const extVersion = '1.2.5';
+  const extVersion = '1.2.6';
 
   function isWsaDashboard() {
     return !!(
@@ -92,6 +92,25 @@
       });
     } catch (err) {
       console.warn('WSA Bridge Trigger Error:', err);
+    }
+  });
+
+  // Listen for multi-profile auto-like instruction from dashboard
+  window.addEventListener('wsa-trigger-auto-like', (e) => {
+    try {
+      const postUrl = e.detail?.post_url;
+      const postId = e.detail?.post_id || null;
+      const profiles = e.detail?.profiles || [];
+      chrome.runtime.sendMessage({
+        action: 'START_AUTO_LIKE',
+        post_url: postUrl,
+        post_id: postId,
+        profiles: profiles
+      }, (res) => {
+        window.dispatchEvent(new CustomEvent('wsa-like-response', { detail: res }));
+      });
+    } catch (err) {
+      console.warn('WSA Bridge Auto-Like Error:', err);
     }
   });
 

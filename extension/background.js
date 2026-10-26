@@ -113,6 +113,67 @@ async function checkAndRunNext(ignoreTime = false, forcedClientId = null, forced
   }
 }
 
+// ============================================================
+// Multi-Profile Auto-Like Queue Controller
+// ============================================================
+async function runNextLikeQueueItem() {
+  const { like_queue } = await chrome.storage.local.get(['like_queue']);
+  if (!like_queue || !like_queue.profiles) return;
+
+  const { post_url, profiles, current_index } = like_queue;
+
+  if (current_index >= profiles.length) {
+    logEvent(`🎉 Multi-Profile Auto-Like complete! All ${profiles.length} connected accounts have liked the post.`);
+    chrome.storage.local.remove(['like_queue', 'active_task']);
+    isProcessing = false;
+    return;
+  }
+
+  const profile = profiles[current_index];
+  isProcessing = true;
+  logEvent(`👍 [${current_index + 1}/${profiles.length}] Opening post to like as "${profile.label}"`);
+
+  const task = {
+    type: 'AUTO_LIKE',
+    post_url: post_url,
+    profile_name: profile.label,
+    profile_id: profile.id,
+    index: current_index + 1,
+    total: profiles.length
+  };
+
+  await chrome.storage.local.set({ active_task: task });
+
+  const tab = await chrome.tabs.create({ url: post_url, active: true });
+  currentTabId = tab.id;
+
+  // 90s safety timeout per account
+  setTimeout(() => {
+    if (currentTabId === tab.id) {
+      logEvent(`⚠️ Auto-Like timeout for "${profile.label}". Advancing to next account.`);
+      chrome.tabs.remove(tab.id).catch(() => {});
+      currentTabId = null;
+      advanceLikeQueue();
+    }
+  }, 90000);
+}
+
+function advanceLikeQueue() {
+  chrome.storage.local.get(['like_queue'], (data) => {
+    if (!data.like_queue) {
+      isProcessing = false;
+      return;
+    }
+    const queue = data.like_queue;
+    queue.current_index++;
+    chrome.storage.local.set({ like_queue: queue }, () => {
+      setTimeout(() => {
+        runNextLikeQueueItem();
+      }, 3500); // 3.5-second natural human pause before next profile
+    });
+  });
+}
+
 // Complete share on backend
 async function reportShareComplete(result) {
   const { server_url } = await chrome.storage.local.get(['server_url']);
@@ -192,6 +253,47 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     checkAndRunNext(true, req.client_id, req.item_id).then((res) => {
       sendResponse(res);
     });
+    return true;
+  }
+
+  if (req.action === 'START_AUTO_LIKE') {
+    const postUrl = req.post_url;
+    const profiles = req.profiles || [];
+    if (!postUrl || profiles.length === 0) {
+      sendResponse({ success: false, error: 'Missing post URL or profiles' });
+      return true;
+    }
+
+    logEvent(`🚀 Starting Auto-Like batch for ${profiles.length} profiles on post: ${postUrl}`);
+
+    const likeQueue = {
+      post_url: postUrl,
+      post_id: req.post_id || null,
+      profiles: profiles,
+      current_index: 0
+    };
+
+    chrome.storage.local.set({ like_queue: likeQueue }, () => {
+      runNextLikeQueueItem();
+    });
+
+    sendResponse({ success: true, count: profiles.length });
+    return true;
+  }
+
+  if (req.action === 'LIKE_TASK_COMPLETED') {
+    const result = req.result;
+    logEvent(`✅ Auto-Like finished for "${result.profile_name}" (${result.already_liked ? 'Already Liked' : 'Newly Liked'})`);
+
+    // Close tab after completing 20-30s session
+    if (sender.tab && sender.tab.id) {
+      chrome.tabs.remove(sender.tab.id).catch(() => {});
+    }
+    currentTabId = null;
+
+    advanceLikeQueue();
+
+    sendResponse({ acknowledged: true });
     return true;
   }
 

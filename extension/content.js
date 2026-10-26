@@ -82,9 +82,30 @@
 
       const task = response.task;
       const currentUrl = window.location.href.toLowerCase();
-      const taskGroupUrl = (task.group_url || '').toLowerCase();
 
-      // Check if we are on the target Facebook group
+      // Flow 1: Multi-Profile Auto-Like on Post or Reel
+      if (task.type === 'AUTO_LIKE') {
+        console.log(`👍 WSA Auto-Like: Processing task for "${task.profile_name}" (${task.index}/${task.total})`, task);
+        createHud(`👍 Auto-Liker: Preparing to like as <b>${task.profile_name}</b> (${task.index}/${task.total})...`);
+        try {
+          await executeAutoLikeTask(task);
+        } catch (err) {
+          console.error('WSA Auto-Like Execution Error:', err);
+          updateHud(`⚠️ Auto-Like Note: ${err.message}`, 'FINISHED', '#f59e0b');
+          chrome.runtime.sendMessage({
+            action: 'LIKE_TASK_COMPLETED',
+            result: {
+              success: false,
+              profile_name: task.profile_name,
+              error: err.message
+            }
+          });
+        }
+        return;
+      }
+
+      // Flow 2: Zero-Click Group Sharing (Target Facebook Group Feed)
+      const taskGroupUrl = (task.group_url || '').toLowerCase();
       if (!currentUrl.includes('facebook.com/groups/')) {
         return;
       }
@@ -1018,6 +1039,149 @@
 
     console.log(`ℹ️ WSA: Profile "${rawTarget}" is either active or cannot be switched directly.`);
     return false;
+  }
+
+  // ============================================================
+  // Multi-Profile Auto-Like Engine on Facebook Posts / Reels
+  // ============================================================
+
+  // Find Facebook Like Button on Post or Reel (supports English, Hindi, React states)
+  async function findAndClickLikeButton() {
+    for (let attempt = 0; attempt < 18; attempt++) {
+      const allButtons = Array.from(document.querySelectorAll('div[role="button"], button'));
+
+      // Check if already liked first
+      const alreadyLikedBtn = allButtons.find(b => {
+        const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+        const txt = (b.innerText || '').toLowerCase().trim();
+        return (
+          b.getAttribute('aria-pressed') === 'true' ||
+          aria === 'unlike' ||
+          aria.includes('remove reaction') ||
+          aria.includes('पसंद वापस') ||
+          txt === 'unlike'
+        );
+      });
+
+      if (alreadyLikedBtn) {
+        console.log('👍 WSA: Post/Reel is already liked by current profile.');
+        return { success: true, alreadyLiked: true };
+      }
+
+      // Look for Like button
+      const likeBtn = allButtons.find(b => {
+        const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+        const txt = (b.innerText || '').toLowerCase().trim();
+        const isAriaLike = (
+          aria === 'like' ||
+          aria === 'like this reel' ||
+          aria === 'like this video' ||
+          aria === 'like this post' ||
+          aria === 'पसंद करें' ||
+          aria.includes('like') ||
+          aria.includes('पसंद')
+        );
+        const isTextLike = (txt === 'like' || txt === 'पसंद करें');
+
+        // Filter out utility buttons like "People who reacted like this"
+        if (aria.includes('reacted') || aria.includes('see who') || aria.includes('filter')) return false;
+
+        return isAriaLike || isTextLike;
+      });
+
+      if (likeBtn) {
+        console.log('🎯 WSA: Like button found:', likeBtn);
+        likeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await sleep(600);
+        try {
+          likeBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window }));
+        } catch (e) {}
+        likeBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+        try {
+          likeBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window }));
+        } catch (e) {}
+        likeBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+        likeBtn.click();
+        console.log('✅ WSA: Clicked Like button successfully!');
+        return { success: true, alreadyLiked: false };
+      }
+
+      await sleep(800);
+    }
+
+    return { success: false, reason: 'Like button not located within timeout' };
+  }
+
+  // Simulate Natural Human Scrolling & Browsing Cadence for 20-30 seconds
+  async function simulateHumanScrollCadence(totalDurationSeconds, updateHudCallback) {
+    const startTime = Date.now();
+    const endTime = startTime + (totalDurationSeconds * 1000);
+
+    while (Date.now() < endTime) {
+      const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+      const remainingSec = Math.max(0, totalDurationSeconds - elapsedSec);
+
+      if (updateHudCallback) {
+        updateHudCallback(remainingSec, totalDurationSeconds);
+      }
+
+      // Natural human scroll actions: smooth scroll down or up
+      const scrollAmount = Math.floor(Math.random() * 220) + 100; // 100px to 320px
+      const scrollDirection = Math.random() > 0.3 ? 1 : -1; // 70% down, 30% up
+      window.scrollBy({
+        top: scrollAmount * scrollDirection,
+        left: 0,
+        behavior: 'smooth'
+      });
+
+      // Pause 3 to 5 seconds between scrolls
+      const pauseMs = Math.floor(Math.random() * 2000) + 3000;
+      await sleep(Math.min(pauseMs, Math.max(500, endTime - Date.now())));
+    }
+  }
+
+  // Main Auto-Like execution flow for a profile
+  async function executeAutoLikeTask(task) {
+    updateHud(`🔄 Checking author identity for "${task.profile_name}"...`, 'SWITCHING', '#3b82f6');
+    await switchProfileIfNeeded({ sender_name: task.profile_name }, null);
+    await sleep(1500);
+
+    // Pick random duration between 20 and 30 seconds
+    const totalDurationSeconds = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+    console.log(`⏱️ WSA: Auto-Like session set to ${totalDurationSeconds}s with continuous human scroll`);
+
+    updateHud(`⏳ Initial browsing & locating Like button...`, 'BROWSING', '#3b82f6');
+
+    // Natural initial scroll (1.5 seconds)
+    window.scrollBy({ top: 160, behavior: 'smooth' });
+    await sleep(1200);
+
+    // Find and click like button
+    const likeResult = await findAndClickLikeButton();
+    const likeStatusText = likeResult.alreadyLiked ? 'Already Liked 👍' : 'Liked Successfully 👍';
+
+    // Continuous natural human scrolling for remaining time (20-30s total)
+    await simulateHumanScrollCadence(totalDurationSeconds, (remSec, totalSec) => {
+      const pct = Math.round(((totalSec - remSec) / totalSec) * 100);
+      updateHud(
+        `<b>${likeStatusText}</b> as <i>${task.profile_name}</i> (${task.index}/${task.total})<br>` +
+        `⏳ Natural scrolling & browsing: <b>${remSec}s remaining</b>... Tab will close automatically.`,
+        `${pct}%`,
+        '#10b981'
+      );
+    });
+
+    updateHud(`✅ Completed 20-30s session! Closing tab for next profile...`, 'DONE', '#10b981');
+    await sleep(1000);
+
+    chrome.runtime.sendMessage({
+      action: 'LIKE_TASK_COMPLETED',
+      result: {
+        success: true,
+        profile_name: task.profile_name,
+        already_liked: !!likeResult.alreadyLiked
+      }
+    });
   }
 
   // Main automated flow
