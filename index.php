@@ -2709,30 +2709,42 @@ if ($page === 'groups') {
     $senderProfiles = $pdo->query("SELECT * FROM sender_profiles {$whereClient} ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
     $connectedFbAccounts = $pdo->query("SELECT * FROM accounts WHERE platform = 'facebook' {$whereClientAcc} ORDER BY label ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+    // If active client has specific groups, scope to that client; if active client has 0 groups (workspace switch), use all available groups
+    $clientSpecificGroups = $activeClientId > 0 ? (int)$pdo->query("SELECT COUNT(*) FROM group_targets WHERE client_id = {$activeClientId}")->fetchColumn() : 0;
+    $useClientFilter = ($activeClientId > 0 && $clientSpecificGroups > 0);
+    $scopedClientSql = $useClientFilter ? "WHERE client_id = {$activeClientId}" : "";
+
     // Compute account group counts across all groups for client
     $rawCounts = $pdo->query("
         SELECT account_id, COUNT(*) as cnt 
         FROM group_targets 
-        " . ($activeClientId > 0 ? "WHERE client_id = {$activeClientId}" : "") . " 
+        {$scopedClientSql}
         GROUP BY account_id
     ")->fetchAll(PDO::FETCH_ASSOC);
     $accountGroupCounts = [];
+    $generalGroupCount = 0;
     foreach ($rawCounts as $rc) {
-        $accountGroupCounts[(int)$rc['account_id']] = (int)$rc['cnt'];
+        $accId = (int)($rc['account_id'] ?? 0);
+        if ($accId === 0) {
+            $generalGroupCount += (int)$rc['cnt'];
+        } else {
+            $accountGroupCounts[$accId] = (int)$rc['cnt'];
+        }
     }
-    $totalGroupsCount = (int)$pdo->query("SELECT COUNT(*) FROM group_targets " . ($activeClientId > 0 ? "WHERE client_id = {$activeClientId}" : ""))->fetchColumn();
+    $totalGroupsCount = (int)$pdo->query("SELECT COUNT(*) FROM group_targets {$scopedClientSql}")->fetchColumn();
 
     $filterAccountId = (isset($_GET['account_id']) && $_GET['account_id'] !== '') ? (int)$_GET['account_id'] : null;
 
     $whereGroupFilter = [];
-    if ($activeClientId > 0) {
+    if ($useClientFilter) {
         $whereGroupFilter[] = "gt.client_id = {$activeClientId}";
     }
     if ($filterAccountId !== null) {
         if ($filterAccountId === 0) {
             $whereGroupFilter[] = "(gt.account_id IS NULL OR gt.account_id = 0)";
         } else {
-            $whereGroupFilter[] = "gt.account_id = {$filterAccountId}";
+            // Include groups specifically assigned to this profile PLUS general pool groups
+            $whereGroupFilter[] = "(gt.account_id = {$filterAccountId} OR gt.account_id IS NULL OR gt.account_id = 0)";
         }
     }
     $whereGroupSql = !empty($whereGroupFilter) ? "WHERE " . implode(" AND ", $whereGroupFilter) : "";
@@ -2848,7 +2860,7 @@ if ($page === 'groups') {
 
     render('groups', 'Group Auto-Distribution & Anti-Ban Drip', 'groups', compact(
         'senderProfiles', 'targetGroups', 'shareQueue', 'publishedCampaigns', 'niches', 
-        'stats', 'connectedFbAccounts', 'accountGroupCounts', 'totalGroupsCount', 'filterAccountId',
+        'stats', 'connectedFbAccounts', 'accountGroupCounts', 'generalGroupCount', 'totalGroupsCount', 'filterAccountId',
         'autoPilotEnabled', 'autoPilotCount', 'autoPilotInterval', 'autoPilotLastRun', 
         'autoPilotAccountId', 'autoPilotLastPostUrl', 'cachedLatestPost',
         'defaultMainPage', 'sevenDayPosts', 'defaultMainPageId', 'livePagePosts'

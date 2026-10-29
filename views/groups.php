@@ -190,13 +190,13 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
 <!-- Compact Top Stats (3 Clean Cards) -->
 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(clamp(180px, 22vw, 240px), 1fr)); gap: 12px; margin-bottom: 20px;">
-  <div class="card groups-kpi-card" style="padding:clamp(12px, 1.5vw, 18px); margin:0; display:flex; align-items:center; gap:14px;">
+  <div class="card groups-kpi-card" style="padding:clamp(12px, 1.5vw, 18px); margin:0; display:flex; align-items:center; gap:14px; cursor:pointer;" onclick="switchMainTab('pool')" title="Click karke Groups Pool dekhein">
     <div style="width:clamp(34px, 3.5vw, 42px); height:clamp(34px, 3.5vw, 42px); border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <?= Icons::platform('facebook', 20) ?>
     </div>
     <div>
-      <div class="groups-kpi-lbl" style="font-size:var(--fluid-xs, 11px); color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Joined Groups</div>
-      <div class="groups-kpi-val" style="font-size:var(--fluid-kpi, 22px); font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$totalGroupsCount ?> <span style="font-size:var(--fluid-xs, 11px); font-weight:500; color:var(--muted);">groups</span></div>
+      <div class="groups-kpi-lbl" style="font-size:var(--fluid-xs, 11px); color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Joined Groups Pool</div>
+      <div class="groups-kpi-val" style="font-size:var(--fluid-kpi, 22px); font-weight:800; color:var(--ink); line-height:1.2;"><?= (int)$totalGroupsCount ?> <span style="font-size:var(--fluid-xs, 11px); font-weight:500; color:var(--muted);">groups ↗</span></div>
     </div>
   </div>
 
@@ -248,28 +248,14 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     </button>
   </div>
 </div>
-        <span style="font-size:11.5px; font-weight:500; color:var(--muted); margin-left:6px;">(Page ID: <code><?= h($defaultMainPage['external_id'] ?? '573548745852007') ?></code>)</span>
-      </div>
-    </div>
-  </div>
-  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-    <button type="button" id="header-ext-status-btn" class="btn light" onclick="openExtensionSetupModal(true)" style="font-size:12px; padding:6px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-weight:700;">
-      <span id="header-ext-status-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span>
-      <span id="header-ext-status-text">Checking Extension...</span>
-    </button>
-    <button type="button" class="btn light" onclick="document.getElementById('modal-change-default-page').showModal()" style="font-size:12px; padding:6px 12px; border-radius:6px;">
-      🔄 Change Default Page
-    </button>
-  </div>
-</div>
 
 <!-- Main Section Tabs (Simple & Focused) -->
 <div class="account-filter-tabs" style="margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:8px; gap:8px;">
-  <button type="button" class="tab-pill groups-main-tab-btn active" id="tab-btn-reels" onclick="switchMainTab('reels')">
-    🔥 7-Days Reels &amp; Posts (<?= count($sevenDayPosts) ?>)
-  </button>
-  <button type="button" class="tab-pill groups-main-tab-btn" id="tab-btn-pool" onclick="switchMainTab('pool')">
+  <button type="button" class="tab-pill groups-main-tab-btn active" id="tab-btn-pool" onclick="switchMainTab('pool')">
     📁 All Groups Pool (<?= (int)$totalGroupsCount ?>)
+  </button>
+  <button type="button" class="tab-pill groups-main-tab-btn" id="tab-btn-reels" onclick="switchMainTab('reels')">
+    🔥 7-Days Reels &amp; Posts (<?= count($sevenDayPosts) ?>)
   </button>
   <button type="button" class="tab-pill groups-main-tab-btn" id="tab-btn-schedule" onclick="switchMainTab('schedule')">
     🚀 Schedule Post to Groups
@@ -285,7 +271,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 <!-- ===================================================================== -->
 <!-- TAB 0: 7-DAYS REELS & POSTS (WSA DIGITAL AGENCY LIVE FEED)             -->
 <!-- ===================================================================== -->
-<div id="tab-pane-reels" class="groups-main-tab-pane">
+<div id="tab-pane-reels" class="groups-main-tab-pane" style="display:none;">
   <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
     <div>
       <h2 style="font-size:16px; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:8px;">
@@ -376,7 +362,7 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 <!-- ===================================================================== -->
 <!-- TAB 1: ALL GROUPS POOL (USER-FRIENDLY TABLE)                           -->
 <!-- ===================================================================== -->
-<div id="tab-pane-pool" class="groups-main-tab-pane" style="display:none;">
+<div id="tab-pane-pool" class="groups-main-tab-pane">
   <div class="card" style="margin-bottom: 24px;">
     <!-- Clean Search & Filter Toolbar -->
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--line);">
@@ -388,7 +374,8 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
             <option value="all">🌐 Sabhi Facebook Profiles (<?= (int)$totalGroupsCount ?> Groups)</option>
             <?php foreach ($connectedFbAccounts as $fbAcc): ?>
               <?php 
-                $gCnt = (int)($accountGroupCounts[$fbAcc['id']] ?? 0); 
+                $specCnt = (int)($accountGroupCounts[$fbAcc['id']] ?? 0); 
+                $gCnt = $specCnt > 0 ? $specCnt : (int)$totalGroupsCount;
                 $selected = ($filterAccountId === (int)$fbAcc['id']) ? 'selected' : '';
               ?>
               <option value="<?= (int)$fbAcc['id'] ?>" <?= $selected ?>>
@@ -709,26 +696,34 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
         </div>
 
         <!-- AUTO CONFIG: Niche & Shares Per Page -->
-        <div id="container_group_mode_auto" class="twocol" style="gap:12px;">
-          <div>
-            <label for="queue_shares_per_page" style="font-weight:700; font-size:12px; color:var(--ink);">Har Page Kitne Groups Me Share Kare:
-              <select id="queue_shares_per_page" name="shares_per_page" style="margin-top:4px; font-weight:700;" onchange="updateTotalScheduleCalculation()">
-                <option value="2">2 Groups Har Page</option>
-                <option value="3" selected>3 Groups Har Page (Recommended)</option>
-                <option value="4">4 Groups Har Page</option>
-                <option value="5">5 Groups Har Page (Full Boost)</option>
-              </select>
-            </label>
+        <div id="container_group_mode_auto">
+          <div class="twocol" style="gap:12px;">
+            <div>
+              <label for="queue_shares_per_page" style="font-weight:700; font-size:12px; color:var(--ink);">Har Page Kitne Groups Me Share Kare:
+                <select id="queue_shares_per_page" name="shares_per_page" style="margin-top:4px; font-weight:700;" onchange="updateTotalScheduleCalculation()">
+                  <option value="2">2 Groups Har Page</option>
+                  <option value="3" selected>3 Groups Har Page (Recommended)</option>
+                  <option value="4">4 Groups Har Page</option>
+                  <option value="5">5 Groups Har Page (Full Boost)</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <label for="queue_niche" style="font-weight:700; font-size:12px; color:var(--ink);">Group Category (Niche Filter):
+                <select id="queue_niche" name="niche_category" style="margin-top:4px;">
+                  <option value="all">🌐 Sabhi Groups (<?= count($targetGroups) ?> Groups Pool)</option>
+                  <?php foreach ($niches as $n): ?>
+                    <option value="<?= h($n) ?>"><?= h($n) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </label>
+            </div>
           </div>
-          <div>
-            <label for="queue_niche" style="font-weight:700; font-size:12px; color:var(--ink);">Group Category (Niche Filter):
-              <select id="queue_niche" name="niche_category" style="margin-top:4px;">
-                <option value="all">🌐 Sabhi Groups (<?= count($targetGroups) ?> Groups Pool)</option>
-                <?php foreach ($niches as $n): ?>
-                  <option value="<?= h($n) ?>"><?= h($n) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </label>
+          <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:11.5px; color:var(--muted);">Total <b><?= count($targetGroups) ?> groups</b> pool me active hain. Specific groups tick karne ke liye:</span>
+            <button type="button" class="smallbtn" onclick="toggleGroupSelectionMode('manual')" style="font-size:11px; padding:4px 10px; background:#eff6ff; color:#1877f2; border:1px solid #bfdbfe; font-weight:700;">
+              📋 View &amp; Select From Groups List (<?= count($targetGroups) ?>) ↗
+            </button>
           </div>
         </div>
 
@@ -2233,6 +2228,8 @@ function toggleGroupSelectionMode(mode) {
   const manualContainer = document.getElementById('container_group_mode_manual');
   const labelAuto = document.getElementById('label_mode_auto');
   const labelManual = document.getElementById('label_mode_manual');
+  const radio = document.querySelector('input[name="group_selection_mode"][value="' + mode + '"]');
+  if (radio) radio.checked = true;
 
   if (mode === 'manual') {
     if (autoContainer) autoContainer.style.display = 'none';
@@ -2324,7 +2321,7 @@ function updateTotalScheduleCalculation() {
 
 // Main Tabs Switching (Simple & Instant)
 function switchMainTab(tabName) {
-  if (!tabName) tabName = 'reels';
+  if (!tabName) tabName = 'pool';
   const activeBtn = document.getElementById('tab-btn-' + tabName);
   const activePane = document.getElementById('tab-pane-' + tabName);
   if (!activePane) return;
@@ -2354,26 +2351,57 @@ function switchMainTab(tabName) {
     const tabParam = urlParams.get('tab');
     if (tabParam && document.getElementById('tab-pane-' + tabParam)) {
       switchMainTab(tabParam);
-      return;
+    } else {
+      const saved = localStorage.getItem('wsa_groups_tab');
+      if (saved && document.getElementById('tab-pane-' + saved)) {
+        switchMainTab(saved);
+      } else {
+        switchMainTab('pool');
+      }
     }
-    const saved = localStorage.getItem('wsa_groups_tab');
-    if (saved && document.getElementById('tab-pane-' + saved)) {
-      switchMainTab(saved);
-      return;
+
+    // Also apply initial account filter if present in URL
+    const initialAccId = urlParams.get('account_id');
+    if (initialAccId) {
+      const select = document.getElementById('filter_account_select');
+      if (select) select.value = initialAccId;
+      handleAccountDropdownFilter(initialAccId, false);
     }
-    switchMainTab('reels');
   } catch(e) {}
 })();
 
-// Account Dropdown Filter
-function handleAccountDropdownFilter(accId) {
-  const currentUrl = new URL(window.location.href);
-  if (accId === 'all') {
-    currentUrl.searchParams.delete('account_id');
-  } else {
-    currentUrl.searchParams.set('account_id', accId);
+// Account Dropdown Filter (Instant Client-side Filter with tab & URL preservation)
+function handleAccountDropdownFilter(accId, updateUrl = true) {
+  if (updateUrl) {
+    try {
+      const currentUrl = new URL(window.location.href);
+      if (accId === 'all') {
+        currentUrl.searchParams.delete('account_id');
+      } else {
+        currentUrl.searchParams.set('account_id', accId);
+      }
+      currentUrl.searchParams.set('tab', 'pool');
+      window.history.replaceState(null, '', currentUrl.toString());
+    } catch(e) {}
   }
-  window.location.href = currentUrl.toString();
+
+  const rows = document.querySelectorAll('#groups-table tbody tr:not(.empty-row)');
+  let visible = 0;
+  rows.forEach(function(r) {
+    const rowAcc = r.getAttribute('data-account-id') || '0';
+    // If 'all', or matching account, or general pool (0), show it!
+    if (accId === 'all' || rowAcc === accId || rowAcc === '0') {
+      r.style.display = '';
+      visible++;
+    } else {
+      r.style.display = 'none';
+    }
+  });
+
+  const emptyRow = document.querySelector('#groups-table tbody tr.empty-row');
+  if (emptyRow) {
+    emptyRow.style.display = (visible === 0) ? '' : 'none';
+  }
 }
 
 // Niche / Category Client Filter
