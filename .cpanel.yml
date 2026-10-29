@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/$USER/public_html/
+    - /bin/cp -R assets cli extension includes views .htaccess cron.php index.php $DEPLOYPATH
+    - /bin/chmod 755 $DEPLOYPATH
+    - /bin/chmod -R 777 $DEPLOYPATH/storage $DEPLOYPATH/uploads
