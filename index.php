@@ -246,7 +246,11 @@ if ($page === 'api-group-queue-next') {
                 'full_content' => $caption !== '' ? ($caption . "\n\n" . $postUrl) : $postUrl,
                 'sender_name' => $senderLabel,
                 'account_external_id' => $item['account_external_id'] ?? null,
-                'scheduled_for' => $item['scheduled_for']
+                'scheduled_for' => $item['scheduled_for'],
+                'timings' => [
+                    'preview_wait_sec' => (float)(get_system_setting('group_share_preview_wait_sec', '2.5') ?: 2.5),
+                    'share_close_tab_sec' => (int)(get_system_setting('group_share_close_tab_sec', '4') ?: 4),
+                ]
             ]
         ], JSON_UNESCAPED_SLASHES);
     } else {
@@ -2106,6 +2110,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('index.php?page=groups&tab=queue');
     }
 
+    if ($page === 'group-timing-settings-save') {
+        require_csrf();
+        $shareInterval = max(1, min(180, (int)($_POST['group_share_interval_mins'] ?? 2)));
+        $sharePreviewWait = max(1, min(30, (float)($_POST['group_share_preview_wait_sec'] ?? 2.5)));
+        $shareCloseTab = max(1, min(30, (int)($_POST['group_share_close_tab_sec'] ?? 4)));
+
+        $boostScrollMin = max(5, min(120, (int)($_POST['boost_scroll_min_sec'] ?? 20)));
+        $boostScrollMax = max($boostScrollMin, min(180, (int)($_POST['boost_scroll_max_sec'] ?? 30)));
+        $boostCommentMin = max(5, min(120, (int)($_POST['boost_comment_min_sec'] ?? 30)));
+        $boostCommentMax = max($boostCommentMin, min(180, (int)($_POST['boost_comment_max_sec'] ?? 45)));
+        $boostDelayAccounts = max(5, min(300, (int)($_POST['boost_delay_between_accounts_sec'] ?? 25)));
+        $boostTabClose = max(1, min(30, (int)($_POST['boost_tab_close_sec'] ?? 3)));
+
+        set_system_setting('group_share_interval_mins', (string)$shareInterval);
+        set_system_setting('group_share_preview_wait_sec', (string)$sharePreviewWait);
+        set_system_setting('group_share_close_tab_sec', (string)$shareCloseTab);
+        set_system_setting('boost_scroll_min_sec', (string)$boostScrollMin);
+        set_system_setting('boost_scroll_max_sec', (string)$boostScrollMax);
+        set_system_setting('boost_comment_min_sec', (string)$boostCommentMin);
+        set_system_setting('boost_comment_max_sec', (string)$boostCommentMax);
+        set_system_setting('boost_delay_between_accounts_sec', (string)$boostDelayAccounts);
+        set_system_setting('boost_tab_close_sec', (string)$boostTabClose);
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Timing Settings successfully save ho gayi hain!',
+                'timings' => [
+                    'group_share_interval_mins' => $shareInterval,
+                    'group_share_preview_wait_sec' => $sharePreviewWait,
+                    'group_share_close_tab_sec' => $shareCloseTab,
+                    'boost_scroll_min_sec' => $boostScrollMin,
+                    'boost_scroll_max_sec' => $boostScrollMax,
+                    'boost_comment_min_sec' => $boostCommentMin,
+                    'boost_comment_max_sec' => $boostCommentMax,
+                    'boost_delay_between_accounts_sec' => $boostDelayAccounts,
+                    'boost_tab_close_sec' => $boostTabClose
+                ]
+            ]);
+            exit;
+        }
+
+        flash('success', "⏱ Timing Settings save ho gayi hain! (Share Interval: {$shareInterval}m, Scroll: {$boostScrollMin}-{$boostScrollMax}s, Comment: {$boostCommentMin}-{$boostCommentMax}s, Account Delay: {$boostDelayAccounts}s)");
+        redirect('index.php?page=groups&tab=' . urlencode((string)($_POST['return_tab'] ?? 'pool')));
+    }
+
     if ($page === 'set-default-main-page') {
         $accId = (int)($_POST['main_page_account_id'] ?? 24);
         set_system_setting('default_main_page_id', (string)$accId);
@@ -2858,12 +2909,25 @@ if ($page === 'groups') {
 
     $livePagePosts = $rawPosts ?? [];
 
+    // Automation & Timing Settings (Group Sharing + Like & Comment)
+    $timingSettings = [
+        'group_share_interval_mins' => (int)(get_system_setting('group_share_interval_mins', '2') ?: 2),
+        'group_share_preview_wait_sec' => (float)(get_system_setting('group_share_preview_wait_sec', '2.5') ?: 2.5),
+        'group_share_close_tab_sec' => (int)(get_system_setting('group_share_close_tab_sec', '4') ?: 4),
+        'boost_scroll_min_sec' => (int)(get_system_setting('boost_scroll_min_sec', '20') ?: 20),
+        'boost_scroll_max_sec' => (int)(get_system_setting('boost_scroll_max_sec', '30') ?: 30),
+        'boost_comment_min_sec' => (int)(get_system_setting('boost_comment_min_sec', '30') ?: 30),
+        'boost_comment_max_sec' => (int)(get_system_setting('boost_comment_max_sec', '45') ?: 45),
+        'boost_delay_between_accounts_sec' => (int)(get_system_setting('boost_delay_between_accounts_sec', '25') ?: 25),
+        'boost_tab_close_sec' => (int)(get_system_setting('boost_tab_close_sec', '3') ?: 3),
+    ];
+
     render('groups', 'Group Auto-Distribution & Anti-Ban Drip', 'groups', compact(
         'senderProfiles', 'targetGroups', 'shareQueue', 'publishedCampaigns', 'niches', 
         'stats', 'connectedFbAccounts', 'accountGroupCounts', 'generalGroupCount', 'totalGroupsCount', 'filterAccountId',
         'autoPilotEnabled', 'autoPilotCount', 'autoPilotInterval', 'autoPilotLastRun', 
         'autoPilotAccountId', 'autoPilotLastPostUrl', 'cachedLatestPost',
-        'defaultMainPage', 'sevenDayPosts', 'defaultMainPageId', 'livePagePosts'
+        'defaultMainPage', 'sevenDayPosts', 'defaultMainPageId', 'livePagePosts', 'timingSettings'
     ));
 }
 

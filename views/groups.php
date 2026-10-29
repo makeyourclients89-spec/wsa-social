@@ -175,6 +175,9 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
       </p>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <button type="button" class="btn light" style="font-size:var(--fluid-sm, 13px); padding:clamp(7px, 1vw, 10px) clamp(10px, 1.2vw, 14px); font-weight:700; border-color:#93c5fd; background:#f0f9ff; color:#0369a1; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 5px rgba(3,105,161,0.1);" onclick="openTimingSettingsModal()">
+        <span>⏱️ Timing Settings (Sec/Min)</span>
+      </button>
       <button type="button" class="btn" style="background:#1877f2; color:#ffffff; font-weight:700; border-radius:8px; padding:clamp(7px, 1vw, 10px) clamp(10px, 1.4vw, 16px); font-size:var(--fluid-sm, 13px); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(24,119,242,0.25);" onclick="document.getElementById('modal-sync-profile-groups').showModal()">
         <span>📥 Sync / Import Groups</span>
       </button>
@@ -771,16 +774,20 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
 
       <div class="twocol" style="margin-top:14px;">
         <div>
-          <label for="queue_interval" style="font-weight:700; font-size:12.5px;">4. Har Share Ke Beech Delay:
-            <select id="queue_interval" name="interval_minutes" style="margin-top:4px;">
-              <option value="2" selected>⚡ 2 Minute (Fast Testing / Live)</option>
-              <option value="3">⚡ 3 Minute (Fast Boost)</option>
-              <option value="5">5 Minute</option>
-              <option value="15">15 Minute</option>
-              <option value="20">20 Minute (Safe &amp; Recommended)</option>
-              <option value="30">30 Minute</option>
-            </select>
-          </label>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label for="queue_interval" style="font-weight:700; font-size:12.5px;">4. Har Share Ke Beech Delay:</label>
+            <button type="button" class="smallbtn" onclick="openTimingSettingsModal('share')" style="font-size:11px; padding:2px 7px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">⚙️ Timing Settings</button>
+          </div>
+          <select id="queue_interval" name="interval_minutes" style="margin-top:4px; font-weight:700;">
+            <option value="1" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 1 ? 'selected' : '' ?>>⚡ 1 Minute (Ultra Fast)</option>
+            <option value="2" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 2 ? 'selected' : '' ?>>⚡ 2 Minute (Fast Testing / Live)</option>
+            <option value="3" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 3 ? 'selected' : '' ?>>⚡ 3 Minute (Fast Boost)</option>
+            <option value="5" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 5 ? 'selected' : '' ?>>5 Minute (Balanced)</option>
+            <option value="10" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 10 ? 'selected' : '' ?>>10 Minute</option>
+            <option value="15" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 15 ? 'selected' : '' ?>>15 Minute</option>
+            <option value="20" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 20 ? 'selected' : '' ?>>20 Minute (Safe &amp; Recommended)</option>
+            <option value="30" <?= ($timingSettings['group_share_interval_mins'] ?? 2) == 30 ? 'selected' : '' ?>>30 Minute</option>
+          </select>
         </div>
         <div>
           <label for="queue_caption" style="font-weight:700; font-size:12.5px;">Hook Text (Optional):
@@ -1637,16 +1644,16 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
     <div style="margin-bottom:10px;">
       <div style="font-size:var(--fluid-body, 13.5px); font-weight:800; color:#1e40af; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
         <span>🚀 Multi-Profile Auto Like &amp; Comment (Zero-Click Extension)</span>
-        <span style="font-size:10px; background:#10b981; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">20-30s SCROLL</span>
-        <span style="font-size:10px; background:#3b82f6; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;">30-45s COMMENT SUBMIT</span>
+        <span id="badge_boost_scroll_timing" style="font-size:10px; background:#10b981; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;"><?= (int)($timingSettings['boost_scroll_min_sec'] ?? 20) ?>-<?= (int)($timingSettings['boost_scroll_max_sec'] ?? 30) ?>s SCROLL</span>
+        <span id="badge_boost_comment_timing" style="font-size:10px; background:#3b82f6; color:#fff; padding:2px 7px; border-radius:10px; font-weight:800;"><?= (int)($timingSettings['boost_comment_min_sec'] ?? 30) ?>-<?= (int)($timingSettings['boost_comment_max_sec'] ?? 45) ?>s COMMENT SUBMIT</span>
       </div>
       <div style="font-size:var(--fluid-xs, 11.5px); color:#1e3a8a; margin-top:3px; line-height:1.45;">
-        Har connected profile/page (<?= count($connectedFbAccounts) ?> accounts) se bari-bari post kholegi, <b>post-related smart comment paste</b> karegi (30-45s dynamic timing me submit hoga), <b>Like</b> karegi, aur tab band hokar agle profile par jayegi!
+        Har connected profile/page (<?= count($connectedFbAccounts) ?> accounts) se bari-bari post kholegi, <b>post-related smart comment paste</b> karegi, <b>Like</b> karegi, aur configured timings ke mutabiq agle profile par switch hogi!
       </div>
     </div>
 
     <!-- Configuration Controls -->
-    <div style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
+    <div style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
         <label style="display:flex; align-items:center; gap:6px; font-size:var(--fluid-xs, 11.5px); font-weight:700; color:#1e3a8a; cursor:pointer;">
           <input type="checkbox" id="boost_enable_like" checked style="width:16px; height:16px; accent-color:#2563eb;">
@@ -1658,18 +1665,44 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
         </label>
       </div>
 
-      <!-- Delay Between Accounts Setting (Dusri profile kholne se pehle ka time) -->
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:6px; border-top:1px dashed #dbeafe;">
-        <label for="boost_delay_between_accounts" style="font-size:var(--fluid-xs, 11.5px); font-weight:700; color:#1e40af; display:flex; align-items:center; gap:5px;">
-          <span>⏱️ Agli profile kholne se pehle wait time (Delay between accounts):</span>
-        </label>
-        <select id="boost_delay_between_accounts" style="font-size:var(--fluid-xs, 11px); font-weight:700; padding:4px 10px; border-radius:6px; border:1.5px solid #3b82f6; background:#eff6ff; color:#1e40af; cursor:pointer;">
-          <option value="15">⚡ 15 Seconds (Fast Testing)</option>
-          <option value="25" selected>⏱️ 25 Seconds (Recommended)</option>
-          <option value="40">🛡️ 40 Seconds (Anti-Ban Safe)</option>
-          <option value="60">🔒 1 Minute (Ultra Safe)</option>
-          <option value="120">🔒 2 Minutes (Maximum Cadence)</option>
-        </select>
+      <!-- Quick Timings Controls Inside Station -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; align-items:center;">
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:3px;">
+            📜 Scroll &amp; Read Time:
+          </label>
+          <div style="display:flex; align-items:center; gap:4px; font-size:11px; color:#64748b;">
+            <input type="number" id="inline_boost_scroll_min" min="5" max="120" value="<?= (int)($timingSettings['boost_scroll_min_sec'] ?? 20) ?>" style="width:50px; padding:3px 6px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; text-align:center;">
+            <span>-</span>
+            <input type="number" id="inline_boost_scroll_max" min="10" max="180" value="<?= (int)($timingSettings['boost_scroll_max_sec'] ?? 30) ?>" style="width:50px; padding:3px 6px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; text-align:center;">
+            <span>sec</span>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:3px;">
+            💬 Comment Submit Delay:
+          </label>
+          <div style="display:flex; align-items:center; gap:4px; font-size:11px; color:#64748b;">
+            <input type="number" id="inline_boost_comment_min" min="5" max="120" value="<?= (int)($timingSettings['boost_comment_min_sec'] ?? 30) ?>" style="width:50px; padding:3px 6px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; text-align:center;">
+            <span>-</span>
+            <input type="number" id="inline_boost_comment_max" min="10" max="180" value="<?= (int)($timingSettings['boost_comment_max_sec'] ?? 45) ?>" style="width:50px; padding:3px 6px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; text-align:center;">
+            <span>sec</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="boost_delay_between_accounts" style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:3px;">
+            ⏱️ Next Profile Delay:
+          </label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="number" id="boost_delay_between_accounts" min="5" max="300" value="<?= (int)($timingSettings['boost_delay_between_accounts_sec'] ?? 25) ?>" style="width:65px; padding:3px 6px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; text-align:center;">
+            <span style="font-size:11px; color:#64748b;">sec</span>
+            <button type="button" class="smallbtn" onclick="openTimingSettingsModal('boost')" style="font-size:10.5px; padding:3px 7px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;" title="Full Timing Settings Kholein">
+              ⚙️ More
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1815,9 +1848,166 @@ $boosterPages = array_values(array_filter($connectedFbAccounts, fn($a) => (int)$
   </div>
 </dialog>
 
+<!-- ===================================================================== -->
+<!-- MODAL: AUTOMATION TIMING SETTINGS (SECONDS & MINUTES CONTROL)         -->
+<!-- ===================================================================== -->
+<dialog id="modal-timing-settings" style="border:1px solid var(--line); border-radius:14px; padding:clamp(16px, 2vw, 24px); max-width:680px; width:95%; background:var(--bg); color:var(--ink); box-shadow:0 15px 40px rgba(0,0,0,0.3);">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--line);">
+    <div>
+      <h3 style="margin:0; font-size:var(--fluid-h3, 16px); font-weight:800; display:flex; align-items:center; gap:8px;">
+        <span style="color:#2563eb;">⏱️</span>
+        <span>Automation Timing Settings (Seconds &amp; Minutes)</span>
+      </h3>
+      <p style="margin:4px 0 0; font-size:var(--fluid-xs, 12px); color:var(--muted); line-height:1.4;">
+        Group Sharing aur Like &amp; Comment booster me har activity kitne second ya minute me execute hogi, yahan customize karein.
+      </p>
+    </div>
+    <button type="button" style="background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer; padding:2px 8px; line-height:1;" onclick="document.getElementById('modal-timing-settings').close()">✕</button>
+  </div>
+
+  <!-- Presets Bar -->
+  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; margin-bottom:16px;">
+    <div style="font-size:11.5px; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+      <span>⚡ Quick Speed Presets:</span>
+      <span style="font-weight:normal; color:#64748b;">(1-click me recommended timings apply karein)</span>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="button" class="smallbtn" onclick="applyTimingPreset('fast')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:11px; font-weight:700; padding:4px 10px;">
+        ⚡ Fast Testing (1m share, 10-15s scroll, 15-20s comment, 10s switch)
+      </button>
+      <button type="button" class="smallbtn" onclick="applyTimingPreset('recommended')" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:700; padding:4px 10px;">
+        🛡️ Balanced (Recommended: 2m share, 20-30s scroll, 30-45s comment, 25s switch)
+      </button>
+      <button type="button" class="smallbtn" onclick="applyTimingPreset('stealth')" style="background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; font-size:11px; font-weight:700; padding:4px 10px;">
+        🔒 Safe Stealth (5m share, 30-50s scroll, 45-65s comment, 45s switch)
+      </button>
+    </div>
+  </div>
+
+  <form id="form-timing-settings" method="post" action="index.php?page=group-timing-settings-save" onsubmit="handleTimingFormSubmit(event)">
+    <?= csrf_field() ?>
+    <input type="hidden" name="return_tab" id="timing_return_tab" value="pool">
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:16px;">
+      
+      <!-- CARD 1: GROUP SHARING TIMINGS -->
+      <div style="background:#ffffff; border:1.5px solid #bfdbfe; border-radius:10px; padding:14px; box-shadow:0 2px 8px rgba(37,99,235,0.05);">
+        <div style="font-weight:800; font-size:13px; color:#1e40af; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+          <span>📁</span>
+          <span>1. Group Auto-Sharing Timings</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label for="inp_share_interval" style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              ⏱️ Har Share Ke Beech Delay (Interval):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_share_interval" name="group_share_interval_mins" min="1" max="180" value="<?= (int)($timingSettings['group_share_interval_mins'] ?? 2) ?>" style="width:75px; padding:6px 10px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Minutes</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Ek group me post hone ke baad agle group ka gap.</div>
+          </div>
+
+          <div>
+            <label for="inp_preview_wait" style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              👁️ Link Preview Wait (Post Click Se Pehle):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_preview_wait" name="group_share_preview_wait_sec" min="1" max="30" step="0.5" value="<?= (float)($timingSettings['group_share_preview_wait_sec'] ?? 2.5) ?>" style="width:75px; padding:6px 10px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Caption/link paste ke baad Facebook preview aane ka natural pause.</div>
+          </div>
+
+          <div>
+            <label for="inp_share_close_tab" style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              🚪 Tab Auto-Close Time (Post Hone Ke Baad):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_share_close_tab" name="group_share_close_tab_sec" min="1" max="30" value="<?= (int)($timingSettings['group_share_close_tab_sec'] ?? 4) ?>" style="width:75px; padding:6px 10px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Post live verify hone ke baad tab band hone ka delay.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: LIKE & COMMENT BOOSTER TIMINGS -->
+      <div style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:10px; padding:14px; box-shadow:0 2px 8px rgba(5,150,105,0.05);">
+        <div style="font-weight:800; font-size:13px; color:#065f46; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+          <span>💬</span>
+          <span>2. Like &amp; Comment Booster Timings</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              📜 Post Scroll &amp; Read Time (Like Se Pehle):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_scroll_min" name="boost_scroll_min_sec" min="5" max="120" value="<?= (int)($timingSettings['boost_scroll_min_sec'] ?? 20) ?>" style="width:65px; padding:6px 8px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <span style="color:var(--muted); font-size:12px;">to</span>
+              <input type="number" id="inp_scroll_max" name="boost_scroll_max_sec" min="10" max="180" value="<?= (int)($timingSettings['boost_scroll_max_sec'] ?? 30) ?>" style="width:65px; padding:6px 8px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Is time frame me extension human ki tarah scroll karke Like karegi.</div>
+          </div>
+
+          <div>
+            <label style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              💬 Comment Paste &amp; Submit Ka Dynamic Delay:
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_comment_min" name="boost_comment_min_sec" min="5" max="120" value="<?= (int)($timingSettings['boost_comment_min_sec'] ?? 30) ?>" style="width:65px; padding:6px 8px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <span style="color:var(--muted); font-size:12px;">to</span>
+              <input type="number" id="inp_comment_max" name="boost_comment_max_sec" min="10" max="180" value="<?= (int)($timingSettings['boost_comment_max_sec'] ?? 45) ?>" style="width:65px; padding:6px 8px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px; text-align:center;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Har baar is range ke beech alag random timing me comment submit hoga.</div>
+          </div>
+
+          <div>
+            <label for="inp_account_delay" style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              🔄 Agli Profile Switch Delay (Wait Between Accounts):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_account_delay" name="boost_delay_between_accounts_sec" min="5" max="300" value="<?= (int)($timingSettings['boost_delay_between_accounts_sec'] ?? 25) ?>" style="width:75px; padding:6px 10px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+            <div style="font-size:10.5px; color:var(--muted); margin-top:2px;">Ek account ka kaam pura hone ke baad agla account kholne ka gap.</div>
+          </div>
+
+          <div>
+            <label for="inp_boost_close_tab" style="font-weight:700; font-size:11.5px; color:var(--ink); display:block; margin-bottom:4px;">
+              🚪 Tab Auto-Close Time (Boost Complete Hone Ke Baad):
+            </label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" id="inp_boost_close_tab" name="boost_tab_close_sec" min="1" max="30" value="<?= (int)($timingSettings['boost_tab_close_sec'] ?? 3) ?>" style="width:75px; padding:6px 10px; font-size:12px; font-weight:700; border:1px solid var(--line); border-radius:6px;">
+              <span style="font-size:12px; font-weight:600; color:var(--muted);">Seconds</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:14px;">
+      <div id="timing_save_status" style="font-size:12px; font-weight:700; color:#059669; display:none;">
+        ✓ Saved &amp; Synced with Extension!
+      </div>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button type="button" class="btn light" onclick="document.getElementById('modal-timing-settings').close()" style="font-size:12px; padding:7px 14px;">Cancel</button>
+        <button type="submit" id="btn_save_timings" class="btn btn-primary" style="background:#2563eb; color:#fff; font-weight:700; font-size:12px; padding:7px 18px;">
+          💾 Save Timings &amp; Sync Extension
+        </button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
 <script>
 // WSA Extension Realtime Detection Engine
-const LATEST_EXT_VERSION = '1.2.7';
+const LATEST_EXT_VERSION = '1.2.8';
 let isWsaExtensionActive = false;
 
 function compareVersions(v1, v2) {
@@ -2042,7 +2232,12 @@ function startMultiPageAutoLike() {
     return;
   }
 
-  const delaySec = parseInt(document.getElementById('boost_delay_between_accounts')?.value || '25', 10);
+  const delaySec = parseInt(document.getElementById('boost_delay_between_accounts')?.value || document.getElementById('inp_account_delay')?.value || '25', 10);
+  const scrollMin = parseInt(document.getElementById('inline_boost_scroll_min')?.value || document.getElementById('inp_scroll_min')?.value || '20', 10);
+  const scrollMax = parseInt(document.getElementById('inline_boost_scroll_max')?.value || document.getElementById('inp_scroll_max')?.value || '30', 10);
+  const commentMin = parseInt(document.getElementById('inline_boost_comment_min')?.value || document.getElementById('inp_comment_min')?.value || '30', 10);
+  const commentMax = parseInt(document.getElementById('inline_boost_comment_max')?.value || document.getElementById('inp_comment_max')?.value || '45', 10);
+  const tabCloseSec = parseInt(document.getElementById('inp_boost_close_tab')?.value || '3', 10);
   const enableLike = document.getElementById('boost_enable_like')?.checked !== false;
   const enableComment = document.getElementById('boost_enable_comment')?.checked !== false;
 
@@ -2059,6 +2254,11 @@ function startMultiPageAutoLike() {
       post_snippet: currentBoostSnippet,
       profiles: connectedFbAccountsList,
       delay_between_accounts_sec: delaySec,
+      boost_scroll_min_sec: scrollMin,
+      boost_scroll_max_sec: scrollMax,
+      boost_comment_min_sec: commentMin,
+      boost_comment_max_sec: commentMax,
+      boost_tab_close_sec: tabCloseSec,
       enable_like: enableLike,
       enable_comment: enableComment
     }
@@ -2071,6 +2271,132 @@ function startMultiPageAutoLike() {
       btn.style.opacity = '1';
     }
   }, 1000);
+}
+
+// Open Timing Settings Modal
+function openTimingSettingsModal(focusSection = null) {
+  const modal = document.getElementById('modal-timing-settings');
+  if (modal) {
+    modal.showModal();
+    if (focusSection === 'share') {
+      document.getElementById('inp_share_interval')?.focus();
+    } else if (focusSection === 'boost') {
+      document.getElementById('inp_scroll_min')?.focus();
+    }
+  }
+}
+
+// Quick Preset Applier
+function applyTimingPreset(preset) {
+  const shareInterval = document.getElementById('inp_share_interval');
+  const previewWait = document.getElementById('inp_preview_wait');
+  const shareCloseTab = document.getElementById('inp_share_close_tab');
+  const scrollMin = document.getElementById('inp_scroll_min');
+  const scrollMax = document.getElementById('inp_scroll_max');
+  const commentMin = document.getElementById('inp_comment_min');
+  const commentMax = document.getElementById('inp_comment_max');
+  const accountDelay = document.getElementById('inp_account_delay');
+  const boostCloseTab = document.getElementById('inp_boost_close_tab');
+
+  if (preset === 'fast') {
+    if (shareInterval) shareInterval.value = 1;
+    if (previewWait) previewWait.value = 1.5;
+    if (shareCloseTab) shareCloseTab.value = 2;
+    if (scrollMin) scrollMin.value = 10;
+    if (scrollMax) scrollMax.value = 15;
+    if (commentMin) commentMin.value = 15;
+    if (commentMax) commentMax.value = 20;
+    if (accountDelay) accountDelay.value = 10;
+    if (boostCloseTab) boostCloseTab.value = 2;
+  } else if (preset === 'stealth') {
+    if (shareInterval) shareInterval.value = 5;
+    if (previewWait) previewWait.value = 4;
+    if (shareCloseTab) shareCloseTab.value = 6;
+    if (scrollMin) scrollMin.value = 30;
+    if (scrollMax) scrollMax.value = 50;
+    if (commentMin) commentMin.value = 45;
+    if (commentMax) commentMax.value = 65;
+    if (accountDelay) accountDelay.value = 45;
+    if (boostCloseTab) boostCloseTab.value = 5;
+  } else { // recommended
+    if (shareInterval) shareInterval.value = 2;
+    if (previewWait) previewWait.value = 2.5;
+    if (shareCloseTab) shareCloseTab.value = 4;
+    if (scrollMin) scrollMin.value = 20;
+    if (scrollMax) scrollMax.value = 30;
+    if (commentMin) commentMin.value = 30;
+    if (commentMax) commentMax.value = 45;
+    if (accountDelay) accountDelay.value = 25;
+    if (boostCloseTab) boostCloseTab.value = 3;
+  }
+}
+
+// Handle Timing Form Submit via AJAX & sync with extension
+async function handleTimingFormSubmit(e) {
+  e.preventDefault();
+  const form = document.getElementById('form-timing-settings');
+  const btn = document.getElementById('btn_save_timings');
+  const statusEl = document.getElementById('timing_save_status');
+  if (btn) btn.innerText = '⏳ Saving...';
+
+  const formData = new FormData(form);
+  const timings = {
+    group_share_interval_mins: parseInt(formData.get('group_share_interval_mins'), 10),
+    group_share_preview_wait_sec: parseFloat(formData.get('group_share_preview_wait_sec')),
+    group_share_close_tab_sec: parseInt(formData.get('group_share_close_tab_sec'), 10),
+    boost_scroll_min_sec: parseInt(formData.get('boost_scroll_min_sec'), 10),
+    boost_scroll_max_sec: parseInt(formData.get('boost_scroll_max_sec'), 10),
+    boost_comment_min_sec: parseInt(formData.get('boost_comment_min_sec'), 10),
+    boost_comment_max_sec: parseInt(formData.get('boost_comment_max_sec'), 10),
+    boost_delay_between_accounts_sec: parseInt(formData.get('boost_delay_between_accounts_sec'), 10),
+    boost_tab_close_sec: parseInt(formData.get('boost_tab_close_sec'), 10)
+  };
+
+  try {
+    const res = await fetch('index.php?page=group-timing-settings-save', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+
+    // Broadcast to Chrome Extension via bridge
+    window.dispatchEvent(new CustomEvent('wsa-update-timing-settings', { detail: timings }));
+    localStorage.setItem('wsa_timing_settings', JSON.stringify(timings));
+
+    // Update inline inputs in modals/tabs if present
+    const inlineScrollMin = document.getElementById('inline_boost_scroll_min');
+    if (inlineScrollMin) inlineScrollMin.value = timings.boost_scroll_min_sec;
+    const inlineScrollMax = document.getElementById('inline_boost_scroll_max');
+    if (inlineScrollMax) inlineScrollMax.value = timings.boost_scroll_max_sec;
+    const inlineCommentMin = document.getElementById('inline_boost_comment_min');
+    if (inlineCommentMin) inlineCommentMin.value = timings.boost_comment_min_sec;
+    const inlineCommentMax = document.getElementById('inline_boost_comment_max');
+    if (inlineCommentMax) inlineCommentMax.value = timings.boost_comment_max_sec;
+    const inlineAccDelay = document.getElementById('boost_delay_between_accounts');
+    if (inlineAccDelay) inlineAccDelay.value = timings.boost_delay_between_accounts_sec;
+    const queueInterval = document.getElementById('queue_interval');
+    if (queueInterval) queueInterval.value = timings.group_share_interval_mins;
+
+    // Update badges
+    const badgeScroll = document.getElementById('badge_boost_scroll_timing');
+    if (badgeScroll) badgeScroll.innerText = `${timings.boost_scroll_min_sec}-${timings.boost_scroll_max_sec}s SCROLL`;
+    const badgeComment = document.getElementById('badge_boost_comment_timing');
+    if (badgeComment) badgeComment.innerText = `${timings.boost_comment_min_sec}-${timings.boost_comment_max_sec}s COMMENT SUBMIT`;
+
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+    }
+    if (btn) btn.innerText = '✓ Saved Successfully!';
+    setTimeout(() => {
+      if (btn) btn.innerText = '💾 Save Timings & Sync Extension';
+      document.getElementById('modal-timing-settings')?.close();
+    }, 1200);
+  } catch (err) {
+    console.error('Save timing error:', err);
+    form.submit(); // fallback to normal form POST
+  }
 }
 
 function handleBoostButtonClick(btn) {

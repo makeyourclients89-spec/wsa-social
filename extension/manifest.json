@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WSA Social - Auto Facebook Group Share",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Zero-Click Automatic Group Sharing, Multi-Profile Auto-Like & Smart Auto-Comment with Human Cadence.",
   "icons": {
     "16": "icon16.png",

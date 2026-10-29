@@ -89,6 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.innerText = 'PAUSED';
       }
 
+      // Update timing summary
+      const timingSummaryEl = document.getElementById('popup-timings-summary');
+      if (timingSummaryEl) {
+        chrome.storage.local.get(['timing_settings'], (data) => {
+          const t = data.timing_settings || {};
+          const sMin = t.boost_scroll_min_sec || 20;
+          const sMax = t.boost_scroll_max_sec || 30;
+          const cMin = t.boost_comment_min_sec || 30;
+          const cMax = t.boost_comment_max_sec || 45;
+          const shM = t.group_share_interval_mins || 2;
+          timingSummaryEl.innerText = `${sMin}-${sMax}s scroll • ${cMin}-${cMax}s comment • ${shM}m share`;
+        });
+      }
+
       if (state.active_task) {
         taskBox.className = 'task-card';
         taskTitle.innerText = `⏳ Sharing: ${state.active_task.group_name}`;

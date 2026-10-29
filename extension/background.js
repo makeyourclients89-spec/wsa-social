@@ -133,7 +133,7 @@ async function runNextLikeQueueItem() {
   isProcessing = true;
   logEvent(`👉 [${current_index + 1}/${profiles.length}] Opening post to like/comment as "${profile.label}"`);
 
-  const task = {
+    const task = {
     type: 'AUTO_LIKE',
     post_url: post_url,
     post_snippet: post_snippet || '',
@@ -142,7 +142,8 @@ async function runNextLikeQueueItem() {
     enable_like: enable_like !== false,
     enable_comment: enable_comment !== false,
     index: current_index + 1,
-    total: profiles.length
+    total: profiles.length,
+    timings: like_queue.timings || {}
   };
 
   await chrome.storage.local.set({ active_task: task });
@@ -288,7 +289,15 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
       delay_between_accounts_sec: delaySec,
       enable_like: enableLike,
       enable_comment: enableComment,
-      current_index: 0
+      current_index: 0,
+      timings: {
+        scroll_min: req.boost_scroll_min_sec || 20,
+        scroll_max: req.boost_scroll_max_sec || 30,
+        comment_min: req.boost_comment_min_sec || 30,
+        comment_max: req.boost_comment_max_sec || 45,
+        delay_between_accounts_sec: delaySec,
+        tab_close: req.boost_tab_close_sec || 3
+      }
     };
 
     chrome.storage.local.set({ like_queue: likeQueue }, () => {
@@ -296,6 +305,15 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     });
 
     sendResponse({ success: true, count: profiles.length });
+    return true;
+  }
+
+  if (req.action === 'UPDATE_TIMING_SETTINGS') {
+    const timings = req.timings || {};
+    chrome.storage.local.set({ timing_settings: timings }, () => {
+      logEvent(`⏱️ Timings updated: Share ${timings.group_share_interval_mins}m, Scroll ${timings.boost_scroll_min_sec}-${timings.boost_scroll_max_sec}s, Comment ${timings.boost_comment_min_sec}-${timings.boost_comment_max_sec}s`);
+      sendResponse({ success: true });
+    });
     return true;
   }
 
@@ -307,13 +325,6 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     if (sender.tab && sender.tab.id) {
       chrome.tabs.remove(sender.tab.id).catch(() => {});
     }
-    currentTabId = null;
-
-    advanceLikeQueue();
-
-    sendResponse({ acknowledged: true });
-    return true;
-  }
     currentTabId = null;
 
     advanceLikeQueue();

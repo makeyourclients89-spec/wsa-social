@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const extVersion = '1.2.7';
+  const extVersion = '1.2.8';
 
   function isWsaDashboard() {
     return !!(
@@ -105,6 +105,11 @@
       const delaySec = e.detail?.delay_between_accounts_sec || 25;
       const enableLike = e.detail?.enable_like !== false;
       const enableComment = e.detail?.enable_comment !== false;
+      const scrollMin = e.detail?.boost_scroll_min_sec || 20;
+      const scrollMax = e.detail?.boost_scroll_max_sec || 30;
+      const commentMin = e.detail?.boost_comment_min_sec || 30;
+      const commentMax = e.detail?.boost_comment_max_sec || 45;
+      const tabCloseSec = e.detail?.boost_tab_close_sec || 3;
 
       chrome.runtime.sendMessage({
         action: 'START_AUTO_LIKE',
@@ -113,6 +118,11 @@
         post_snippet: postSnippet,
         profiles: profiles,
         delay_between_accounts_sec: delaySec,
+        boost_scroll_min_sec: scrollMin,
+        boost_scroll_max_sec: scrollMax,
+        boost_comment_min_sec: commentMin,
+        boost_comment_max_sec: commentMax,
+        boost_tab_close_sec: tabCloseSec,
         enable_like: enableLike,
         enable_comment: enableComment
       }, (res) => {
@@ -120,6 +130,20 @@
       });
     } catch (err) {
       console.warn('WSA Bridge Auto-Like Error:', err);
+    }
+  });
+
+  // Listen for timing settings update from dashboard
+  window.addEventListener('wsa-update-timing-settings', (e) => {
+    try {
+      const timings = e.detail || {};
+      chrome.runtime.sendMessage({
+        action: 'UPDATE_TIMING_SETTINGS',
+        timings: timings
+      });
+      chrome.storage.local.set({ timing_settings: timings });
+    } catch (err) {
+      console.warn('WSA Bridge Timing Update Error:', err);
     }
   });
 

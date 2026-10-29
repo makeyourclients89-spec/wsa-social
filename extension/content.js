@@ -1349,11 +1349,13 @@
         await insertTextIntoEditor(commentEditor, tailoredComment);
         console.log('✅ WSA: Comment pasted successfully into box.');
 
-        // User Requirement: 30-45 sec me submit hoga ... time change hota rahe har baar
-        const submitDelaySeconds = Math.floor(Math.random() * (45 - 30 + 1)) + 30; // 30 to 45 seconds dynamic delay
+        // User Requirement: Dynamic submit delay (configurable via dashboard timings)
+        const commentMin = (task.timings && task.timings.comment_min) ? parseInt(task.timings.comment_min, 10) : 30;
+        const commentMax = (task.timings && task.timings.comment_max) ? parseInt(task.timings.comment_max, 10) : 45;
+        const submitDelaySeconds = Math.floor(Math.random() * (Math.max(commentMin, commentMax) - commentMin + 1)) + commentMin;
         console.log(`⏱️ WSA: Comment will submit in ${submitDelaySeconds}s with natural human scrolling...`);
 
-        // Continuous natural human scrolling during 30-45s wait
+        // Continuous natural human scrolling during dynamic wait
         await simulateHumanScrollCadence(submitDelaySeconds, (remSec, totalSec) => {
           const pct = Math.round(((totalSec - remSec) / totalSec) * 100);
           updateHud(
@@ -1364,7 +1366,7 @@
           );
         });
 
-        // Submit comment after 30-45s!
+        // Submit comment after dynamic delay!
         updateHud(`🚀 Submitting comment on Facebook...`, 'SUBMITTING', '#10b981');
         await submitFacebookComment(commentEditor);
         commentSubmitted = true;
@@ -1372,14 +1374,18 @@
         await sleep(3500);
       } else {
         console.warn('⚠️ WSA: Comment editor not found, executing natural scroll fallback.');
-        const fallbackWait = Math.floor(Math.random() * (35 - 25 + 1)) + 25;
+        const scrollMin = (task.timings && task.timings.scroll_min) ? parseInt(task.timings.scroll_min, 10) : 20;
+        const scrollMax = (task.timings && task.timings.scroll_max) ? parseInt(task.timings.scroll_max, 10) : 30;
+        const fallbackWait = Math.floor(Math.random() * (Math.max(scrollMin, scrollMax) - scrollMin + 1)) + scrollMin;
         await simulateHumanScrollCadence(fallbackWait, (remSec, totalSec) => {
           updateHud(`⏳ Natural scroll: <b>${remSec}s remaining</b>...`, `${totalSec - remSec}s`, '#3b82f6');
         });
       }
     } else {
-      // If only Like was enabled: 20-30s human scroll
-      const likeDuration = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+      // If only Like was enabled: configurable human scroll
+      const scrollMin = (task.timings && task.timings.scroll_min) ? parseInt(task.timings.scroll_min, 10) : 20;
+      const scrollMax = (task.timings && task.timings.scroll_max) ? parseInt(task.timings.scroll_max, 10) : 30;
+      const likeDuration = Math.floor(Math.random() * (Math.max(scrollMin, scrollMax) - scrollMin + 1)) + scrollMin;
       await simulateHumanScrollCadence(likeDuration, (remSec, totalSec) => {
         updateHud(
           `<b>${likeStatusText}</b> as <i>${task.profile_name}</i> (${task.index}/${task.total})<br>` +
@@ -1390,8 +1396,9 @@
       });
     }
 
-    updateHud(`✅ Completed for "${task.profile_name}"! Tab closing in 3s...`, 'DONE', '#10b981');
-    await sleep(2500);
+    const tabCloseSec = (task.timings && task.timings.tab_close) ? parseInt(task.timings.tab_close, 10) : 3;
+    updateHud(`✅ Completed for "${task.profile_name}"! Tab closing in ${tabCloseSec}s...`, 'DONE', '#10b981');
+    await sleep(tabCloseSec * 1000);
 
     chrome.runtime.sendMessage({
       action: 'LIKE_TASK_COMPLETED',
@@ -1481,8 +1488,9 @@
 
       // Check if minimum 15 seconds have passed AND preview is detected
       if (elapsedSeconds >= 15 && previewDetected) {
-        updateHud(`✅ <b>Preview Ready!</b> ${previewDetails}<br><small style="color:#94a3b8;">Natural human pause before clicking Post...</small>`, 'READY', '#10b981');
-        await sleep(2500);
+        const pauseSec = (task.timings && task.timings.preview_wait_sec) ? parseFloat(task.timings.preview_wait_sec) : 2.5;
+        updateHud(`✅ <b>Preview Ready!</b> ${previewDetails}<br><small style="color:#94a3b8;">Natural human pause (${pauseSec}s) before clicking Post...</small>`, 'READY', '#10b981');
+        await sleep(pauseSec * 1000);
         break;
       }
 
